@@ -225,7 +225,7 @@ private:
 
     String getBodyInner() override
     {
-      return "<div><img display='inherit' src=\"" + String(LOGO_URL) + "\"></div>" +
+      return "<div><img src=\"" + String(LOGO_URL) + "\"></div>" +
              iotwebconf2::HtmlFormatProvider::getBodyInner();
     }
 

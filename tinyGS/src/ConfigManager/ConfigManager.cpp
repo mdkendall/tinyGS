@@ -143,7 +143,7 @@ void ConfigManager::handleRoot()
   s += "<style>" + String(FPSTR(IOTWEBCONF_HTML_STYLE_INNER)) + "</style>";
   s += FPSTR(IOTWEBCONF_HTML_HEAD_END);
   s += FPSTR(IOTWEBCONF_HTML_BODY_INNER);
-  s += "<div><img display='inherit' src=\"" + String(LOGO_URL) + "\"></div><br/>";
+  s += "<div><img src=\"" + String(LOGO_URL) + "\"></div><br/>";
   s += "<button onclick=\"window.location.href='" + String(DASHBOARD_URL) + "';\">Station dashboard</button><br /><br />";
   s += "<button onclick=\"window.location.href='" + String(CONFIG_URL) + "';\">Configure parameters</button><br /><br />";
   s += "<button onclick=\"window.location.href='" + String(UPDATE_URL) + "';\">Upload new version</button><br /><br />";
@@ -182,7 +182,7 @@ void ConfigManager::handleDashboard()
   s += "<script>" + String(FPSTR(IOTWEBCONF_WORLDMAP_SCRIPT)) + "</script>";
   s += FPSTR(IOTWEBCONF_HTML_HEAD_END);
   s += FPSTR(IOTWEBCONF_DASHBOARD_BODY_INNER);
-  s += "<div><img display='inherit' src=\"" + String(LOGO_URL) + "\"></div><br/>";
+  s += "<div><img src=\"" + String(LOGO_URL) + "\"></div><br/>";
 
   // build svg of world map with animated satellite position
   uint ix = 0;
@@ -448,7 +448,7 @@ void ConfigManager::handleRestart()
   s += "<meta http-equiv=\"refresh\" content=\"8; url=/\">";
   s += FPSTR(IOTWEBCONF_HTML_HEAD_END);
   s += FPSTR(IOTWEBCONF_HTML_BODY_INNER);
-  s += "<div><img display='inherit' src=\"" + String(LOGO_URL) + "\"></div><br/>";
+  s += "<div><img src=\"" + String(LOGO_URL) + "\"></div><br/>";
   s += "Ground Station is restarting...<br /><br/>";
   s += FPSTR(IOTWEBCONF_HTML_END);
 
