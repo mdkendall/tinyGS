@@ -622,6 +622,16 @@ void ConfigManager::printConfig()
     Log::debug(PSTR("board: %u --> %s\n:"),getBoard(), boards[getBoard()].BOARD.c_str());
 }
 
+void ConfigManager::setMqttServer(const char *server)
+{
+  // check if server is valid
+  if (strlen(server) < MQTT_SERVER_LENGTH)
+  {
+    strncpy(mqttServer, server, MQTT_SERVER_LENGTH);
+    this->saveConfig();
+  }
+}
+
 void ConfigManager::configSavedCallback()
 {
   // If the station name changes we have to restart as it is considered a different station
