@@ -643,9 +643,14 @@ void ConfigManager::configSavedCallback()
   if (!remoteSave) // remote save is set to true when saving programatically, it's false if the callback comes from web
   {
     forceApMode(false);
-    parseModemStartup();
-    MQTT_Client::getInstance().scheduleRestart();
- 
+    parseModemStartup ();
+    if ((strnlen (mqttServer, MQTT_SERVER_LENGTH) > 0) &&
+        (strnlen (mqttPort, MQTT_PORT_LENGTH) > 0) &&
+        (strnlen (mqttUser, MQTT_USER_LENGTH) > 0) &&
+        (strnlen (mqttPass, MQTT_PASS_LENGTH) > 0)) {
+            MQTT_Client::getInstance ().scheduleRestart ();
+    }
+
     // Prog button already pressed so something is wrong.. trying to amend it..
     if (!digitalRead(boards[getBoard()].PROG__BUTTON)) {
         Log::error(PSTR("Wrong selection Prog button pressed, trying to solve it"));
