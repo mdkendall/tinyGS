@@ -178,9 +178,14 @@ public:
     strcpy(advancedConfig, adv_prmStr);
     this->saveConfig();
   }
-  const char *getBoardTemplate() { return boardTemplate; }
+  const char* getBoardTemplate () { return boardTemplate; }
+
   void setMqttServer (const char* server);
-  void setBoardTemplate(const char *boardTemplateStr)
+  void setMqttUser (const char* user);
+  void setMqttPass (const char* pass);
+  void setMqttPort (uint16_t port);
+  
+  void setBoardTemplate (const char* boardTemplateStr)
   {
     strcpy(boardTemplate, boardTemplateStr);
     this->saveConfig();
@@ -208,6 +213,11 @@ public:
     remoteSave = true;
     IotWebConf2::saveConfig();
     currentBoardDirty = true;
+  };
+  bool askedWebLogin () {
+      bool asked = askForWeblogin;
+      askForWeblogin = false;
+      return asked;
   };
 
 private:
@@ -285,6 +295,7 @@ private:
   char boardTemplate[TEMPLATE_LEN] = "";
   char modemStartup[MODEM_LEN] = "";
   char advancedConfig[ADVANCED_LEN] = "";
+  bool askForWeblogin = false;
 
   iotwebconf2::NumberParameter latitudeParam = iotwebconf2::NumberParameter("Latitude (3 decimals, will be public)", "lat", latitude, COORDINATE_LENGTH, NULL, "0.000", "required min='-180' max='180' step='0.001'");
   iotwebconf2::NumberParameter longitudeParam = iotwebconf2::NumberParameter("Longitude (3 decimals, will be public)", "lng", longitude, COORDINATE_LENGTH, NULL, "-0.000", "required min='-180' max='180' step='0.001'");
@@ -294,7 +305,7 @@ private:
   iotwebconf2::TextParameter mqttServerParam = iotwebconf2::TextParameter ("Server address", "mqtt_server", mqttServer, MQTT_SERVER_LENGTH, NULL, NULL, "disabled type=\"text\" maxlength=30");
   iotwebconf2::NumberParameter mqttPortParam = iotwebconf2::NumberParameter ("Server Port", "mqtt_port", mqttPort, MQTT_PORT_LENGTH, NULL, NULL, "disabled min=\"0\" max=\"65536\" step=\"1\"");
   iotwebconf2::TextParameter mqttUserParam = iotwebconf2::TextParameter ("MQTT Username", "mqtt_user", mqttUser, MQTT_USER_LENGTH, NULL, NULL, "disabled type=\"text\" maxlength=30");
-  iotwebconf2::PasswordParameter mqttPassParam = iotwebconf2::PasswordParameter ("MQTT Password", "mqtt_pass", mqttPass, MQTT_PASS_LENGTH, NULL, NULL, "disabled type=\"text\" maxlength=30");
+  iotwebconf2::PasswordParameter mqttPassParam = iotwebconf2::PasswordParameter (NULL, "mqtt_pass", mqttPass, MQTT_PASS_LENGTH, NULL, NULL, "disabled hidden type=\"text\" maxlength=30");
 
   iotwebconf2::ParameterGroup groupBoardConfig = iotwebconf2::ParameterGroup("Board config", "Board config");
   iotwebconf2::SelectParameter boardParam = iotwebconf2::SelectParameter("Board type", "board", board, BOARD_LENGTH, (char *)BOARD_VALUES, (char *)BOARD_NAMES, sizeof(BOARD_VALUES) / BOARD_LENGTH, BOARD_NAME_LENGTH);

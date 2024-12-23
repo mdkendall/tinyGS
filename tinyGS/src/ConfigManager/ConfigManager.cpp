@@ -306,6 +306,12 @@ void ConfigManager::handleRefreshConsole()
           Log::console(PSTR("Sending test packet to nearby stations!"));
         }
       }
+    } else if (strcmp (svalue.c_str (), "!w") == 0) {
+        Log::console (PSTR ("Getting weblogin"));
+        askForWeblogin = true;
+    } else if (strcmp (svalue.c_str (), "!e") == 0) {
+        resetAllConfig ();
+        ESP.restart ();
     }
     else
     {
@@ -629,6 +635,33 @@ void ConfigManager::setMqttServer(const char *server)
   {
     strncpy(mqttServer, server, MQTT_SERVER_LENGTH);
     this->saveConfig();
+  }
+}
+
+void ConfigManager::setMqttPort (uint16_t port)
+{
+  if (port > 0 && port < 65535)
+  {
+    itoa(port, mqttPort, 10);
+    this->saveConfig();
+  }
+}
+
+void ConfigManager::setMqttUser(const char *user)
+{
+  if (strlen(user) < MQTT_USER_LENGTH)
+  {
+    strncpy(mqttUser, user, MQTT_USER_LENGTH);
+    this->saveConfig();
+  }
+}
+
+void ConfigManager::setMqttPass(const char *pass)
+{
+  if (strlen(pass) < MQTT_PASS_LENGTH)
+  {
+      strncpy (mqttPass, pass, MQTT_PASS_LENGTH);
+      this->saveConfig ();
   }
 }
 

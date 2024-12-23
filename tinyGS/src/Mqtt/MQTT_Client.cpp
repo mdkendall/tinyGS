@@ -325,6 +325,15 @@ void MQTT_Client::sendAdvParameters()
   publish(buildTopic(teleTopic, topicGet_adv_prm).c_str(), buffer, false);
 }
 
+void MQTT_Client::sendWeblogin () {
+    Log::debug (PSTR ("Asking for weblogin link"));
+    if (publish (buildTopic (teleTopic, "get_weblogin").c_str (), "1", false)) {
+        Log::debug (PSTR ("Weblogin link requested by mqtt"));
+    } else {
+        Log::error (PSTR ("Weblogin link request by mqtt failed"));
+    }
+}
+
 // helper funcion (this has to dissapear)
 bool isValidFrequency(uint8_t radio, float f)
 {
@@ -363,6 +372,12 @@ void MQTT_Client::manageMQTTData(char *topic, uint8_t *payload, unsigned int len
   if (!strcmp(command, commandUpdate))
   {
     OTA::update();
+    return; // no ack
+  }
+
+  if (!strcmp(command, commandWeblogin))
+  {
+    Log::console(PSTR("Weblogin: %.*s"), length, payload);
     return; // no ack
   }
 

@@ -15,16 +15,18 @@ int randomCode;
 String url;
 
 void generateRandomCode () {
-    randomCode = 100000 + (rand () % 900000);
-    Serial.printf ("Generated OTP: %d\n", randomCode);
-    url = String (API_URL) + String (randomCode);
+    char randomCode[7];
+    sprintf (randomCode, "%06ld", random (0, 1000000));
+    Log::console ("Generated OTP: %s", randomCode);
+    url = String (API_URL) + randomCode;
 }
 
-bool fetchCredentials () {
+String fetchCredentials () {
     time_t now = millis ();
     if (now > httpLastChecked + CHECKEVERY) {
         httpLastChecked = now;
-        Log::console ("Fetching URL: %s", url.c_str ());
+        Log::debug ("Fetching URL: %s", url.c_str ());
+        Log::console("Trying to get MQTT credentials");
 
         HTTPClient http;
         http.begin (url, ISRGroot_CA);
@@ -32,36 +34,16 @@ bool fetchCredentials () {
 
         if (httpResponseCode == 200) {
             String payload = http.getString ();
-            Log::console ("Received 200 OK, payload: %s", payload.c_str ());
-
-            DynamicJsonDocument doc(1024);
-            DeserializationError error = deserializeJson(doc, payload);
-
-            if (error) {
-                Log::console("deserializeJson() failed: %s", error.c_str());
-                http.end();
-                return false;
-            }
-
-            const char* user = doc["mqtt"]["user"];
-            const char* pass = doc["mqtt"]["pass"];
-            const char* server = doc["mqtt"]["server"];
-            int port = doc["mqtt"]["port"];
-
-            Log::console("MQTT User: %s", user);
-            Log::console("MQTT Pass: %s", pass);
-            Log::console("MQTT Server: %s", server);
-            Log::console("MQTT Port: %d", port);
-
+            Log::debug ("Received 200 OK, payload: %s", payload.c_str ());
             http.end ();
-            return true;
+            return payload;
         } else {
-            Log::console ("Received status code: %d", httpResponseCode);
+            Log::debug ("Received status code: %d", httpResponseCode);
             http.end ();
-            return false;
+            return "";
         }
     }
-    return false;
+    return "";
 }
     
 // bool getMqttData () {

@@ -50,9 +50,10 @@ public:
   void sendWelcome();
   void sendRx(String packet, bool noisy);
   void manageMQTTData(char *topic, uint8_t *payload, unsigned int length);
-  void sendStatus();
-  void sendAdvParameters();
-  void scheduleRestart() { scheduledRestart = true; };
+  void sendStatus ();
+  void sendAdvParameters ();
+  void sendWeblogin ();
+  void scheduleRestart () { scheduledRestart = true; };
 
 protected:
 #ifdef SECURE_MQTT
@@ -133,7 +134,8 @@ private:
   const char* commandGoToSiesta PROGMEM= "siesta";
   const char* commandSetFreqOffset PROGMEM= "foff";
   const char* commandSetAdvParameters PROGMEM= "set_adv_prm";
-  const char* commandGetAdvParameters PROGMEM= "get_adv_prm";
+  const char* commandGetAdvParameters PROGMEM = "get_adv_prm";
+  const char* commandWeblogin PROGMEM = "weblogin";
     // GOD MODE  With great power comes great responsibility!
   const char* commandSPIsetRegValue PROGMEM= "SPIsetRegValue";
   const char* commandSPIwriteRegister PROGMEM= "SPIwriteRegister";

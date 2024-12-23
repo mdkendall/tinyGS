@@ -78,6 +78,7 @@
 #include "src/OTA/OTA.h"
 #include "src/Logger/Logger.h"
 #include "time.h"
+#include "src/Mqtt/MQTT_credentials.h"
 
 
 #if  RADIOLIB_VERSION_MAJOR != (0x06) || RADIOLIB_VERSION_MINOR != (0x04) || RADIOLIB_VERSION_PATCH != (0x00) || RADIOLIB_VERSION_EXTRA != (0x00)
@@ -158,6 +159,7 @@ void setup()
   displayShowInitialCredits();
   configManager.delay(1000);
   mqtt.begin();
+  generateRandomCode ();
 
   if (configManager.getOledBright() == 0)
   {
@@ -165,6 +167,49 @@ void setup()
   }
   
   printControls();
+}
+
+bool mqttAutoconf () {
+    const time_t AUTOCONFIG_TIMEOUT = 30 * 60 * 1000;
+    if (configManager.getState () == IOTWEBCONF_STATE_ONLINE) {
+        static time_t started_autoconf = millis ();
+        if (millis () - started_autoconf > AUTOCONFIG_TIMEOUT) {
+            Log::console (PSTR ("Autoconfig timeout, please check your internet connection and restart the board"));
+            delay (500);
+            esp_deep_sleep_start ();
+            return false;
+        }
+        String result = fetchCredentials ();
+        if (result == "") {
+          //Log::console(PSTR("Error fetching credentials, please check your internet connection and try again"));
+            return false;
+        }
+        Log::debug ("result: %s", result.c_str ());
+        delay (1000);
+        DynamicJsonDocument doc (1024);
+        DeserializationError error = deserializeJson (doc, result);
+        if (error) {
+            Log::console ("deserializeJson() failed: %s", error.c_str ());
+            return false;
+        }
+
+        const char* mqttUser = doc["mqtt"]["user"];
+        const char* mqttPass = doc["mqtt"]["pass"];
+        const char* mqttServer = doc["mqtt"]["server"];
+        int mqttPort = doc["mqtt"]["port"].as<int> ();
+
+        Log::debug ("MQTT User: %s", mqttUser);
+        Log::debug ("MQTT Pass: %s", mqttPass);
+        Log::debug ("MQTT Server: %s", mqttServer);
+        Log::debug ("MQTT Port: %d", mqttPort);
+
+        configManager.setMqttServer (mqttServer);
+        configManager.setMqttUser (mqttUser);
+        configManager.setMqttPass (mqttPass);
+        configManager.setMqttPort (mqttPort);
+
+        return true;
+    }
 }
 
 void loop() {  
@@ -186,12 +231,17 @@ void loop() {
   ArduinoOTA.handle();
   handleSerial();
 
-  if (configManager.getState() < 2) // not ready or not configured
+  if (configManager.getState () < IOTWEBCONF_STATE_AP_MODE) // not ready or not configured
   {
     displayShowApMode();
     return;
   }
-  
+
+  if ((configManager.getMqttServer ()[0] == '\0') || (configManager.getMqttUser ()[0] == '\0') || (configManager.getMqttPass ()[0] == '\0')) {
+      mqttAutoconf ();
+      return;
+  }
+
   // configured and no connection
   checkButton();
   if (radio.isReady())
@@ -213,7 +263,13 @@ void loop() {
 
   mqtt.loop();
   OTA::loop();
-  if (configManager.getOledBright() != 0) displayUpdate();
+  if (configManager.getOledBright () != 0) displayUpdate ();
+
+  if (configManager.askedWebLogin () && mqtt.connected())
+  {
+      Log::debug (PSTR ("Getting weblogin in loop"));
+      mqtt.sendWeblogin ();
+  }
 }
 
 void setupNTP()
@@ -302,6 +358,10 @@ void handleSerial()
         lastTestPacketTime = millis();
         Log::console(PSTR("Sending test packet to nearby stations!"));
         break;
+    case 'w':
+        Log::console (PSTR ("Getting weblogin"));
+        mqtt.sendWeblogin ();
+        break;
       default:
         Log::console(PSTR("Unknown command: %c"), serialCmd);
         break;
@@ -314,9 +374,10 @@ void handleSerial()
 // function to print controls
 void printControls()
 {
-  Log::console(PSTR("------------- Controls -------------"));
-  Log::console(PSTR("!e - erase board config and reset"));
-  Log::console(PSTR("!b - reboot the board"));
-  Log::console(PSTR("!p - send test packet to nearby stations (to check transmission)"));
-  Log::console(PSTR("------------------------------------"));
+  Log::console (PSTR ("------------- Controls -------------"));
+  Log::console (PSTR ("!e - erase board config and reset"));
+  Log::console (PSTR ("!b - reboot the board"));
+  Log::console (PSTR ("!p - send test packet to nearby stations (to check transmission)"));
+  Log::console (PSTR ("!w - ask for weblogin link"));
+  Log::console (PSTR ("------------------------------------"));
 }

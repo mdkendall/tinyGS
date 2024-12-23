@@ -6,3 +6,6 @@
 
 scripts/
 tinyGS/tinyGS.ino.cpp
+.aider*
+.env
+settings.json
