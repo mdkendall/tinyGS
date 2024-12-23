@@ -5,6 +5,7 @@
 #include <stdlib.h> // For random number generation
 #include "../certs.h"
 #include "../Logger/Logger.h"
+#include <ArduinoJson.h>
 
 #define API_URL "https://api.test.tinygs.com/credentials?otp="
 
@@ -33,7 +34,24 @@ bool fetchCredentials () {
             String payload = http.getString ();
             Log::console ("Received 200 OK, payload: %s", payload.c_str ());
 
-            // Los datos del payload tienen este formato: {"mqtt":{"user":"26865","pass":"i51DFm0dc","server":"mqtt.test.tinygs.com","port":8855}} guárda cada valor en una variable. AI!
+            DynamicJsonDocument doc(1024);
+            DeserializationError error = deserializeJson(doc, payload);
+
+            if (error) {
+                Log::console("deserializeJson() failed: %s", error.c_str());
+                http.end();
+                return false;
+            }
+
+            const char* user = doc["mqtt"]["user"];
+            const char* pass = doc["mqtt"]["pass"];
+            const char* server = doc["mqtt"]["server"];
+            int port = doc["mqtt"]["port"];
+
+            Log::console("MQTT User: %s", user);
+            Log::console("MQTT Pass: %s", pass);
+            Log::console("MQTT Server: %s", server);
+            Log::console("MQTT Port: %d", port);
 
             http.end ();
             return true;
