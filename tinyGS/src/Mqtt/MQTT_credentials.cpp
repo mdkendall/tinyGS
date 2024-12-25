@@ -7,7 +7,11 @@
 #include "../Logger/Logger.h"
 #include <ArduinoJson.h>
 
-#define API_URL "https://api.test.tinygs.com/credentials?otp="
+#ifdef TEST_API
+const char* API_URL = "https://api.test.tinygs.com/credentials?otp=";
+#else
+const char* API_URL = "https://api.tinygs.com/credentials?otp=";
+#endif
 
 const time_t CHECKEVERY = 15000;
 time_t httpLastChecked = 10000;
