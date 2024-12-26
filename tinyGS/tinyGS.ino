@@ -79,6 +79,7 @@
 #include "src/Logger/Logger.h"
 #include "time.h"
 #include "src/Mqtt/MQTT_credentials.h"
+#include "src/Improv/tinygs_improv.h"
 
 
 #if  RADIOLIB_VERSION_MAJOR != (0x06) || RADIOLIB_VERSION_MINOR != (0x04) || RADIOLIB_VERSION_PATCH != (0x00) || RADIOLIB_VERSION_EXTRA != (0x00)
@@ -103,7 +104,9 @@ Status status;
 void printControls();
 void switchTestmode();
 void checkButton();
-void setupNTP();
+void setupNTP ();
+void handleSerial ();
+void handleRawSerial ();
 
 void configured()
 {
@@ -114,8 +117,9 @@ void configured()
 
 void wifiConnected()
 {
-  configManager.setWifiConnectionCallback(NULL);
-  setupNTP();
+  configManager.setWifiConnectionCallback (NULL);
+  improvOnConnected (NULL);
+  setupNTP ();
   displayShowConnected();
   arduino_ota_setup();
   configManager.delay(100); // finish animation
@@ -137,8 +141,10 @@ void setup()
   setCpuFrequencyMhz(240);
 #endif
   Serial.begin(115200);
-  delay(100);
-  Log::console(PSTR("TinyGS Version %d - %s"), status.version, status.git_version);
+  delay (100);
+  initImprovVersionInfo (status.version);
+  improvOnConnected (wifiConnected);
+  Log::console (PSTR ("TinyGS Version %d - %s"), status.version, status.git_version);
   Log::console(PSTR("Chip  %s - %d"),  ESP.getChipModel(),ESP.getChipRevision());
   configManager.setWifiConnectionCallback(wifiConnected);
   configManager.setConfiguredCallback(configured);
@@ -210,6 +216,7 @@ bool mqttAutoconf () {
 
         return true;
     }
+    return false;
 }
 
 void loop() {  
@@ -297,7 +304,7 @@ void checkButton()
     {
       Log::console(PSTR("Rescue mode forced by button long press!"));
       Log::console(PSTR("Connect to the WiFi AP: %s and open a web browser on ip 192.168.4.1 to configure your station and manually reboot when you finish."), configManager.getThingName());
-      configManager.forceDefaultPassword(true);
+      configManager.forceDefaultPassword(false);
       configManager.forceApMode(true);
       buttPressedStart = 0;
     }
@@ -310,7 +317,20 @@ void checkButton()
   }
 }
 
-void handleSerial()
+void handleSerial () {
+    while (Serial.available () > 0) {
+        yield ();
+        byte next = Serial.peek ();
+        if (next == 'I') {
+            handleImprovPacket ();
+            return;
+        } else {
+            handleRawSerial ();
+        }
+    }
+}
+
+void handleRawSerial()
 {
   if(Serial.available())
   {
