@@ -1,24 +1,20 @@
 #include "tinygs_improv.h"
-#include <WiFi.h>
-#include "../ConfigManager/ConfigManager.h"
+#include <functional>
 
-uint8_t improvBuffer[16];
-uint8_t improvBufferPosition = 0;
-uint32_t firmwareVersion;
-onConnected_t onConnectedCallback = NULL;
-ConfigManager& globalConfigManager = ConfigManager::getInstance();
+using namespace std;
+using namespace placeholders;
 
-const auto MAX_ATTEMPTS_WIFI_CONNECTION = 20;
+// void TinyGSImprov::initImprovVersionInfo (uint32_t version) {
+//     firmwareVersion = version;
+// }
 
-void initImprovVersionInfo (uint32_t version) {
-    firmwareVersion = version;
-}
+// void TinyGSImprov::onConnected (onConnected_t callback) {
+//     onConnectedCb = callback;
+// }
 
-void improvOnConnected (onConnected_t callback) {
-    onConnectedCallback = callback;
-}
+TinyGSImprov improvWiFi;
 
-void send_response (std::vector<uint8_t>& response) {
+void TinyGSImprov::send_response (std::vector<uint8_t>& response) {
     std::vector<uint8_t> data = { 'I', 'M', 'P', 'R', 'O', 'V' };
     data.resize (9);
     data[6] = improv::IMPROV_SERIAL_VERSION;
@@ -34,8 +30,7 @@ void send_response (std::vector<uint8_t>& response) {
     Serial.write (data.data (), data.size ());
 }
 
-void set_state (improv::State state) {
-
+void TinyGSImprov::set_state (improv::State state) {
     std::vector<uint8_t> data = { 'I', 'M', 'P', 'R', 'O', 'V' };
     data.resize (11);
     data[6] = improv::IMPROV_SERIAL_VERSION;
@@ -51,7 +46,7 @@ void set_state (improv::State state) {
     Serial.write (data.data (), data.size ());
 }
 
-void set_error (improv::Error error) {
+void TinyGSImprov::set_error (improv::Error error) {
     std::vector<uint8_t> data = { 'I', 'M', 'P', 'R', 'O', 'V' };
     data.resize (11);
     data[6] = improv::IMPROV_SERIAL_VERSION;
@@ -67,15 +62,15 @@ void set_error (improv::Error error) {
     Serial.write (data.data (), data.size ());
 }
 
-std::vector<std::string> getLocalUrl () {
+std::vector<std::string> TinyGSImprov::getLocalUrl () {
     return {
       // URL where user can finish onboarding or use device
       // Recommended to use website hosted by device
-      String ("http://" + WiFi.localIP ().toString () + "/config").c_str ()
+      String ("http://admin:12345678@" + WiFi.localIP ().toString () + "/dashboard").c_str ()
     };
 }
 
-bool connectWifi (std::string ssid, std::string password) {
+bool TinyGSImprov::connectWifi (std::string ssid, std::string password) {
     uint8_t count = 0;
 
     WiFi.enableAP (false);
@@ -85,28 +80,48 @@ bool connectWifi (std::string ssid, std::string password) {
 
     while (WiFi.status () != WL_CONNECTED) {
         //blink_led (500, 1);
-        delay(100);
+        delay (250);
 
         if (count > MAX_ATTEMPTS_WIFI_CONNECTION) {
+            Serial.printf("Wifi status: %d\n", WiFi.status ());
+            Serial.println ("Failed to connect to wifi...");
             WiFi.disconnect ();
             return false;
         }
         count++;
     }
-    char* ssidConfig = globalConfigManager.getWifiSsidParameter ()->valueBuffer;
-    strncpy (ssidConfig, ssid.c_str (), IOTWEBCONF_WORD_LEN);
-    char* passConfig = globalConfigManager.getWifiPasswordParameter ()->valueBuffer;
-    strncpy (passConfig, password.c_str (), IOTWEBCONF_WIFI_PASSWORD_LEN);
-    globalConfigManager.saveConfig ();
-    globalConfigManager.changeState (IOTWEBCONF_STATE_ONLINE);
-    if (onConnectedCallback != NULL) {
-        onConnectedCallback ();
+    set_state (improv::STATE_PROVISIONED);
+    std::vector<uint8_t> data = improv::build_rpc_response (improv::WIFI_SETTINGS, getLocalUrl (), false);
+    send_response (data);
+
+    strncpy (globalConfigManager->getWifiSsidParameter ()->valueBuffer, ssid.c_str (), globalConfigManager->getWifiSsidParameter ()->getLength ());
+    strncpy (globalConfigManager->getWifiPasswordParameter ()->valueBuffer, password.c_str (), globalConfigManager->getWifiPasswordParameter ()->getLength ());
+    char* stationName = globalConfigManager->getThingNameParameter ()->valueBuffer;
+    int stationNameLength = globalConfigManager->getThingNameParameter ()->getLength ();
+    Serial.printf ("Station name: %s\n", stationName);
+    if (strncmp (stationName, "", stationNameLength) == 0) {
+        strncpy (stationName, "TinyGS_Improv", stationNameLength);
+        Serial.println ("Station name was empty");
     }
+    char* apPassword = globalConfigManager->getApPasswordParameter ()->valueBuffer;
+    int apPasswordLength = globalConfigManager->getApPasswordParameter ()->getLength ();
+    Serial.printf ("AP password: %s\n", apPassword);
+    if (strncmp (apPassword, "", apPasswordLength) == 0) {
+        strncpy (apPassword, "12345678", apPasswordLength);
+        Serial.println ("AP password was empty");
+    }
+    globalConfigManager->saveConfig ();
+    delay (100);
+    ESP.restart ();
+    //globalConfigManager->changeState (IOTWEBCONF_STATE_ONLINE);
+    // if (onConnectedCb != NULL) {
+    //     onConnectedCb ();
+    // }
 
     return true;
 }
 
-void getAvailableWifiNetworks () {
+void TinyGSImprov::getAvailableWifiNetworks () {
     int networkNum = WiFi.scanNetworks ();
 
     for (int id = 0; id < networkNum; ++id) {
@@ -119,9 +134,10 @@ void getAvailableWifiNetworks () {
     std::vector<uint8_t> data =
         improv::build_rpc_response (improv::GET_WIFI_NETWORKS, std::vector<std::string>{}, false);
     send_response (data);
+    WiFi.scanDelete ();
 }
 
-bool onCommandCallback (improv::ImprovCommand cmd) {
+bool TinyGSImprov::onCommandCallback (improv::ImprovCommand cmd) {
     switch (cmd.command) {
     case improv::Command::GET_CURRENT_STATE:
     {
@@ -149,10 +165,9 @@ bool onCommandCallback (improv::ImprovCommand cmd) {
 
             //TODO: Persist credentials here
 
-            set_state (improv::STATE_PROVISIONED);
-            std::vector<uint8_t> data = improv::build_rpc_response (improv::WIFI_SETTINGS, getLocalUrl (), false);
-            send_response (data);
-            //server.begin ();
+            // set_state (improv::STATE_PROVISIONED);
+            // std::vector<uint8_t> data = improv::build_rpc_response (improv::WIFI_SETTINGS, getLocalUrl (), false);
+            // send_response (data);
 
         } else {
             set_state (improv::STATE_STOPPED);
@@ -193,14 +208,17 @@ bool onCommandCallback (improv::ImprovCommand cmd) {
     return true;
 }
 
-void onErrorCallback (improv::Error err) {}
+void TinyGSImprov::onErrorCallback (improv::Error err) {}
 
-void handleImprovPacket () {
+void TinyGSImprov::handleImprovPacket () {
     while (Serial.available () > 0) {
         uint8_t b = Serial.read ();
 
-        if (parse_improv_serial_byte (improvBufferPosition, b, improvBuffer, onCommandCallback, onErrorCallback)) {
-            improvBuffer[improvBufferPosition++] = b;
+        if (parse_improv_serial_byte (improvBufferPosition, b, improvBuffer,
+                                      std::bind (&TinyGSImprov::onCommandCallback, this, _1),
+                                      std::bind (&TinyGSImprov::onErrorCallback, this, _1)) &&
+            (improvBufferPosition < IMPROV_BUFFER_SIZE)) { // Avoid buffer overflow
+                improvBuffer[improvBufferPosition++] = b;
         } else {
             improvBufferPosition = 0;
         }

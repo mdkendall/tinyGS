@@ -9,8 +9,19 @@
 #include "../ConfigManager/ConfigManager.h"
 #include "../Status.h"
 
-//bool getMqttData ();
-String fetchCredentials ();
-void generateRandomCode ();
+class MQTTCredentials {
+public:
+    String fetchCredentials ();
+    void generateOTPCode ();
+    char* getOTPCode ();
+private:
+    const time_t CHECKEVERY = 15000;
+    time_t httpLastChecked = 10000;
+    static const size_t OTP_LENGTH = 7;
+    char otpCode[OTP_LENGTH];
+    String url;
+};
+
+extern MQTTCredentials mqttCredentials;
 
 #endif // MQTT_CREDENTIALS_H

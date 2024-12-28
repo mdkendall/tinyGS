@@ -13,19 +13,19 @@ const char* API_URL = "https://api.test.tinygs.com/credentials?otp=";
 const char* API_URL = "https://api.tinygs.com/credentials?otp=";
 #endif
 
-const time_t CHECKEVERY = 15000;
-time_t httpLastChecked = 10000;
-int randomCode;
-String url;
+MQTTCredentials mqttCredentials;
 
-void generateRandomCode () {
-    char randomCode[7];
-    sprintf (randomCode, "%06ld", random (0, 1000000));
-    Log::console ("Generated OTP: %s", randomCode);
-    url = String (API_URL) + randomCode;
+void MQTTCredentials::generateOTPCode () {
+    snprintf (otpCode, OTP_LENGTH, "%06ld", random (0, 1000000));
+    Log::console ("Generated OTP: %s", otpCode);
+    url = String (API_URL) + otpCode;
 }
 
-String fetchCredentials () {
+char* MQTTCredentials::getOTPCode () {
+    return otpCode;
+}
+
+String MQTTCredentials::fetchCredentials () {
     time_t now = millis ();
     if (now > httpLastChecked + CHECKEVERY) {
         httpLastChecked = now;
@@ -33,6 +33,7 @@ String fetchCredentials () {
         Log::console("Trying to get MQTT credentials");
 
         HTTPClient http;
+        http.setTimeout (3000);
         http.begin (url, ISRGroot_CA);
         int httpResponseCode = http.GET ();
 

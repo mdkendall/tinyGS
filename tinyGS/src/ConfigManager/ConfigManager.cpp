@@ -22,6 +22,7 @@
 #include "../Logger/Logger.h"
 #include "../Radio/Radio.h"
 #include "../Display/graphics.h"
+#include "../Mqtt/MQTT_credentials.h"
 #include "ArduinoJson.h"
 #if ARDUINOJSON_USE_LONG_LONG == 0 && !PLATFORMIO
 #error "Using Arduino IDE is not recommended, please follow this guide https://github.com/G4lile0/tinyGS/wiki/Arduino-IDE or edit /ArduinoJson/src/ArduinoJson/Configuration.hpp and amend to #define ARDUINOJSON_USE_LONG_LONG 1 around line 68"
@@ -312,9 +313,9 @@ void ConfigManager::handleRefreshConsole()
     } else if (strcmp (svalue.c_str (), "!e") == 0) {
         resetAllConfig ();
         ESP.restart ();
-    }
-    else
-    {
+    } else if (strcmp (svalue.c_str (), "!o") == 0) {
+        Log::console ("OTP Code: %s", mqttCredentials.getOTPCode ());
+    } else {
       Log::console(PSTR("%s"), F("Command still not supported in web serial console!"));
     }
   }
@@ -419,8 +420,9 @@ void ConfigManager::handleRefreshWorldmap()
     data_string += String("<span class='R'>NOT CONNECTED</span>") + ",";
   }
   data_string += String(Radio::getInstance().isReady() ? "<span class='G'>READY</span>" : "<span class='R'>NOT READY</span>") + ",";
-  Radio &radio = Radio::getInstance();
-  radio.currentRssi();
+  Radio& radio = Radio::getInstance ();
+  if (status.radio_ready)
+    radio.currentRssi ();
   data_string += String(status.modeminfo.currentRssi) + ",";
   
   // last packet received data (for lastpacket id table data)
@@ -628,42 +630,67 @@ void ConfigManager::printConfig()
     Log::debug(PSTR("board: %u --> %s\n:"),getBoard(), boards[getBoard()].BOARD.c_str());
 }
 
-void ConfigManager::setMqttServer(const char *server)
-{
-  // check if server is valid
-  if (strlen(server) < MQTT_SERVER_LENGTH)
-  {
-    strncpy(mqttServer, server, MQTT_SERVER_LENGTH);
-    this->saveConfig();
-  }
-}
+// void ConfigManager::setMqttServer(const char *server)
+// {
+//   // check if server is valid
+//   if (strlen(server) < MQTT_SERVER_LENGTH)
+//   {
+//     strncpy(mqttServer, server, MQTT_SERVER_LENGTH);
+//     this->saveConfig();
+//   }
+// }
 
-void ConfigManager::setMqttPort (uint16_t port)
-{
-  if (port > 0 && port < 65535)
-  {
-    itoa(port, mqttPort, 10);
-    this->saveConfig();
-  }
-}
+// void ConfigManager::setMqttPort (uint16_t port)
+// {
+//   if (port > 0 && port < 65535)
+//   {
+//     itoa(port, mqttPort, 10);
+//     this->saveConfig();
+//   }
+// }
 
-void ConfigManager::setMqttUser(const char *user)
-{
-  if (strlen(user) < MQTT_USER_LENGTH)
-  {
-    strncpy(mqttUser, user, MQTT_USER_LENGTH);
-    this->saveConfig();
-  }
-}
+// void ConfigManager::setMqttUser(const char *user)
+// {
+//   if (strlen(user) < MQTT_USER_LENGTH)
+//   {
+//     strncpy(mqttUser, user, MQTT_USER_LENGTH);
+//     this->saveConfig();
+//   }
+// }
 
-void ConfigManager::setMqttPass(const char *pass)
-{
-  if (strlen(pass) < MQTT_PASS_LENGTH)
-  {
-      strncpy (mqttPass, pass, MQTT_PASS_LENGTH);
-      this->saveConfig ();
-  }
-}
+// void ConfigManager::setMqttPass(const char *pass)
+// {
+//   if (strlen(pass) < MQTT_PASS_LENGTH)
+//   {
+//       strncpy (mqttPass, pass, MQTT_PASS_LENGTH);
+//       this->saveConfig ();
+//   }
+// }
+
+// void ConfigManager::setLatitude (const char* lat) {
+//     if (strlen (lat) < MIN_COORDINATE_LENGTH) {
+//         if (!isnan (atof (lat))) {
+//             strncpy (latitude, lat, COORDINATE_LENGTH);
+//             this->saveConfig ();
+//         }
+//     }
+// }
+
+// void ConfigManager::setLongitude (const char* lon) {
+//     if (strlen (lon) < MIN_COORDINATE_LENGTH) {
+//         if (!isnan (atof (lon))) {
+//             strncpy (longitude, lon, COORDINATE_LENGTH);
+//             this->saveConfig ();
+//         }
+//     }
+// }
+
+// void ConfigManager::setTZ (const char* tz) {
+//     if (strlen (tz) < TZ_LENGTH) {
+//         strncpy (this->tz, tz, TZ_LENGTH);
+//         this->saveConfig ();
+//     }
+// }
 
 void ConfigManager::configSavedCallback()
 {

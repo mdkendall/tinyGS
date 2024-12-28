@@ -35,6 +35,7 @@
 
 constexpr auto STATION_NAME_LENGTH = 21;
 constexpr auto COORDINATE_LENGTH = 10;
+constexpr auto MIN_COORDINATE_LENGTH = 1;
 constexpr auto MQTT_SERVER_LENGTH = 31;
 constexpr auto MQTT_PORT_LENGTH = 6;
 constexpr auto MQTT_USER_LENGTH = 31;
@@ -180,11 +181,24 @@ public:
   }
   const char* getBoardTemplate () { return boardTemplate; }
 
-  void setMqttServer (const char* server);
-  void setMqttUser (const char* user);
-  void setMqttPass (const char* pass);
-  void setMqttPort (uint16_t port);
+  //void setMqttServer (const char* server);
+  iotwebconf2::Parameter* getMqttServerParameter () { return &mqttServerParam; }
+  //void setMqttUser (const char* user);
+  iotwebconf2::Parameter* getMqttUserParameter () { return &mqttUserParam; }
+  //void setMqttPass (const char* pass);
+  iotwebconf2::Parameter* getMqttPassParameter () { return &mqttPassParam; }
+  //void setMqttPort (uint16_t port);
+  iotwebconf2::Parameter* getMqttPortParameter () { return &mqttPortParam; }
+  //void setThingName (const char* thingName);
+  //void setAdminPassword (const char* adminPw);
+  //void setLatitude (const char* lat);
+  //void setLongitude (const char* lng);
+  iotwebconf2::Parameter* getLongitudeParameter () { return &longitudeParam; }
+  iotwebconf2::Parameter* getLatitudeParameter () { return &latitudeParam; }
+  //void setTZ (const char* tz);
+  iotwebconf2::Parameter* getTZParameter () { return &tzParam; }
   
+
   void setBoardTemplate (const char* boardTemplateStr)
   {
     strcpy(boardTemplate, boardTemplateStr);
@@ -297,11 +311,12 @@ private:
   char advancedConfig[ADVANCED_LEN] = "";
   bool askForWeblogin = false;
 
-  iotwebconf2::NumberParameter latitudeParam = iotwebconf2::NumberParameter("Latitude (3 decimals, will be public)", "lat", latitude, COORDINATE_LENGTH, NULL, "0.000", "required min='-180' max='180' step='0.001'");
-  iotwebconf2::NumberParameter longitudeParam = iotwebconf2::NumberParameter("Longitude (3 decimals, will be public)", "lng", longitude, COORDINATE_LENGTH, NULL, "-0.000", "required min='-180' max='180' step='0.001'");
+  //iotwebconf2::NumberParameter latitudeParam = iotwebconf2::NumberParameter("Latitude (3 decimals, will be public)", "lat", latitude, COORDINATE_LENGTH, NULL, "0.000", "required min='-180' max='180' step='0.001'");
+  iotwebconf2::NumberParameter latitudeParam = iotwebconf2::NumberParameter("Latitude (3 decimals, will be public)", "lat", latitude, COORDINATE_LENGTH, NULL, "0.000", "min='-180' max='180' step='0.001'");
+  iotwebconf2::NumberParameter longitudeParam = iotwebconf2::NumberParameter("Longitude (3 decimals, will be public)", "lng", longitude, COORDINATE_LENGTH, NULL, "-0.000", "min='-180' max='180' step='0.001'");
   iotwebconf2::SelectParameter tzParam = iotwebconf2::SelectParameter("Time Zone", "tz", tz, TZ_LENGTH, (char *)TZ_VALUES, (char *)TZ_NAMES, sizeof(TZ_VALUES) / TZ_LENGTH, TZ_NAME_LENGTH);
-
-  iotwebconf2::ParameterGroup groupMqtt = iotwebconf2::ParameterGroup("MQTT credentials", "MQTT credentials (First join the group <a href='https://t.me/joinchat/DmYSElZahiJGwHX6jCzB3Q'>here</a>)<br>Then open a private chat with <a href='https://t.me/tinygs_personal_bot'>@tinygs_personal_bot</a> and ask /mqtt");
+  
+  iotwebconf2::ParameterGroup groupMqtt = iotwebconf2::ParameterGroup ("MQTT credentials", "MQTT credentials (First join the group <a href='https://t.me/joinchat/DmYSElZahiJGwHX6jCzB3Q'>here</a>)<br>Then open a private chat with <a href='https://t.me/tinygs_personal_bot'>@tinygs_personal_bot</a> and ask /mqtt");
   iotwebconf2::TextParameter mqttServerParam = iotwebconf2::TextParameter ("Server address", "mqtt_server", mqttServer, MQTT_SERVER_LENGTH, NULL, NULL, "disabled type=\"text\" maxlength=30");
   iotwebconf2::NumberParameter mqttPortParam = iotwebconf2::NumberParameter ("Server Port", "mqtt_port", mqttPort, MQTT_PORT_LENGTH, NULL, NULL, "disabled min=\"0\" max=\"65536\" step=\"1\"");
   iotwebconf2::TextParameter mqttUserParam = iotwebconf2::TextParameter ("MQTT Username", "mqtt_user", mqttUser, MQTT_USER_LENGTH, NULL, NULL, "disabled type=\"text\" maxlength=30");
