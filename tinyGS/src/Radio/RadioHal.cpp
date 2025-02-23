@@ -385,3 +385,34 @@ int16_t RadioHal<SX1280>::setEncoding(uint8_t encoding)
 
     return radio->setEncoding(encoding);
 }
+
+template<>
+int16_t RadioHal<SX1268>::setWhitening(bool enabled, uint16_t initial)
+{
+    return radio->setWhitening(enabled,initial);
+}
+
+
+template<>
+int16_t RadioHal<SX1262>::setWhitening(bool enabled, uint16_t initial)
+{
+    return 0;
+}
+
+template<>
+int16_t RadioHal<SX1276>::setWhitening(bool enabled, uint16_t initial)
+{
+    return 0;
+}
+
+template<>
+int16_t RadioHal<SX1278>::setWhitening(bool enabled, uint16_t initial)
+{
+    return 0;
+}
+
+template<>
+int16_t RadioHal<SX1280>::setWhitening(bool enabled, uint16_t initial)
+{
+    return 0;
+}

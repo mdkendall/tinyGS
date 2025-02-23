@@ -144,3 +144,47 @@ void Log::setLogLevel(LoggingLevels level)
 {
   logLevel = level;
 }
+
+void Log::log_packet(uint8_t *packet, size_t size){
+  //Print out Packet Data in Hex/ASCII form
+  int bytes_per_line=16;
+  int longLinea=bytes_per_line*3;//Add the space after each byte
+  char* cadena = new char[longLinea+1];
+  char* ascii = new char[bytes_per_line+1];
+  int j=0; int k=0;
+  //Log::console(PSTR("Logging packet..."));
+  for (int i=0;i<size;i++){
+      j=3*(i%bytes_per_line); //Index for the Hex Data
+      k=(i%bytes_per_line); //Index for the ASCII Data
+      //Preparation of the Hex data line
+      sprintf(cadena + j, "%02X ", packet[i]);
+      //Preparation of the ASCII data line
+      if (packet[i]>=32 && packet[i]<127){
+        sprintf(ascii + k, "%c", packet[i]);
+      }else{
+        sprintf(ascii + k, "%c", 0x2E);
+      }
+      //Check for end of line or end of packet
+      if ((k==bytes_per_line-1) || i==size-1) {
+        //If end of packet fill in with spaces
+        if (i==size-1){
+          int m=0;
+          //Add spaces until complete Hex Data Linea
+          for (m=j+3;m<(longLinea);m+=3){
+            sprintf(cadena + m, "   ");
+          }
+          int n=0;
+          //Add spaces until complete ASCII Line
+          for (n=k+1;n<(bytes_per_line);n++){
+            sprintf(ascii + n, " ");
+          }
+        }
+        cadena[longLinea]=0;
+        ascii[bytes_per_line]=0;
+        //Final Data/ASCII Line print on screen
+        Log::console(PSTR("%s %s"),cadena,ascii);
+        cadena[0]=0;
+        ascii[0]=0;
+        }
+  }
+}

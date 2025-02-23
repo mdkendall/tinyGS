@@ -56,6 +56,16 @@ struct ModemInfo {
   uint8_t   len       = 64;     // FSK expected lenght in packet mode
   uint8_t   enc       = 0;      // FSK  transmission encoding. (0 -> NRZ(sx127x, sx126x)(defaul).  1 -> MANCHESTER(sx127x), WHITENING(sx126x).  2 -> WHITENING(sx127x, sx126x). 10 -> NRZ(sx127x), WHITENING(sx126x).
   float currentRssi = 0;
+  ///////////////////////////////////////////////////////
+  uint16_t  whitening_seed  = 0x01E1; //Whitening Seed
+  uint8_t   framing   = 0; //0 -> No framing - 1 -> AX.25
+  bool      crc_by_sw = false;
+  uint8_t   crc_nbytes = 2; //Number of Bytes of CRC
+  uint16_t  crc_init  = 0xFFFF; 
+  uint16_t  crc_poly  = 0X8005;
+  uint16_t  crc_finalxor = 0X0000;
+  bool      crc_refIn = false; //Whether to reflect input bytes
+  bool      crc_refOut = false; //Whether to reflect result
 };
 
 struct TextFrame {   
@@ -67,7 +77,7 @@ struct TextFrame {
 };
 
 struct Status {
-  const uint32_t version = 2403241; // version year month day release
+  const uint32_t version = 2410061; // version year month day release
   const char* git_version = GIT_VERSION;
   bool mqtt_connected = false;
   bool radio_ready = false;

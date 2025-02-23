@@ -78,12 +78,13 @@ ConfigManager::ConfigManager()
   {      0x3c,       21,        22,     UNUSED,        38,        22,      RADIO_SX1276,    18,     26,     33,   UNUSED,  14,      19,     27,     5,     0.0f,   UNUSED, UNUSED, "868-915MHz T-BEAM V1.0 + OLED"     },   // SX1276 @fafu
   {      0x3c,       21,        22,     UNUSED,         0,        25,      RADIO_SX1278,    18,     26,     33,   UNUSED,  23,      19,     27,     5,     0.0f,   UNUSED, UNUSED, "433MHz LILYGO T3_V1.6.1"     },         // SX1278
   {      0x3c,       21,        22,     UNUSED,         0,        25,      RADIO_SX1276,    18,     26,     33,   UNUSED,  23,      19,     27,     5,     0.0f,   UNUSED, UNUSED, "868-915MHz LILYGO T3_V1.6.1"     },     // SX1276
-  {      0x3c,       21,        22,     UNUSED,         0,        25,      RADIO_SX1276,    18,     26,   UNUSED,   32,    23,      19,     27,     5,     0.0f,   UNUSED, UNUSED, "868-915MHz LILYGO T3_V1.6.1 TCXO"    }, // SX1262
+  {      0x3c,       21,        22,     UNUSED,         0,        25,      RADIO_SX1276,    18,     26,   UNUSED,   32,    23,      19,     27,     5,     0.0f,   UNUSED, UNUSED, "868-915MHz LILYGO T3_V1.6.1 TCXO"    }, // SX1276
 
  #endif
   })
 {
   server.on(ROOT_URL, [this] { handleRoot(); });
+  server.on(FAVICON_URL, [this] { handleFavicon(); });
   server.on(CONFIG_URL, [this] { handleConfig(); });
   server.on(DASHBOARD_URL, [this] { handleDashboard(); });
   server.on(RESTART_URL, [this] { handleRestart(); });
@@ -137,6 +138,7 @@ void ConfigManager::handleRoot()
   }
 
   String s = String(FPSTR(IOTWEBCONF_HTML_HEAD));
+  s += "<link rel=\"icon\" href=\"" + String(FAVICON_URL) + "\"/>";
   s += "<style>" + String(FPSTR(IOTWEBCONF_HTML_STYLE_INNER)) + "</style>";
   s += FPSTR(IOTWEBCONF_HTML_HEAD_END);
   s += FPSTR(IOTWEBCONF_HTML_BODY_INNER);
@@ -151,6 +153,11 @@ void ConfigManager::handleRoot()
 
   server.sendHeader("Content-Length", String(s.length()));
   server.send(200, "text/html; charset=UTF-8", s);
+}
+
+void ConfigManager::handleFavicon()
+{
+  server.send_P(200, "image/png", FAVICON_PNG, sizeof(FAVICON_PNG));
 }
 
 void ConfigManager::handleDashboard()
@@ -220,12 +227,10 @@ void ConfigManager::handleDashboard()
   s += "<tr><td>Name </td><td>" + String(getThingName()) + "</td></tr>";
   s += "<tr><td>Version </td><td>" + String(status.version) + "</td></tr>";
   s += "<tr><td>MQTT Server </td><td>" + String(status.mqtt_connected ? "<span class='G'>CONNECTED</span>" : "<span class='R'>NOT CONNECTED</span>") + "</td></tr>";
-  if (WiFi.isConnected() ){
-      s += "<tr><td>WiFi RSSI </td><td>" + String(WiFi.RSSI()) + "</td></tr>";
-  }
-
+  s += "<tr><td>WiFi RSSI </td><td>" + String(WiFi.isConnected() ? "<span class='G'>CONNECTED</span>" : "<span class='R'>NOT CONNECTED</span>") + "</td></tr>";
   s += "<tr><td>Radio </td><td>" + String(Radio::getInstance().isReady() ? "<span class='G'>READY</span>" : "<span class='R'>NOT READY</span>") + "</td></tr>";
-   s += "<tr><td>Noise floor </td><td>" + String(status.modeminfo.currentRssi) + "</td></tr>"; 
+  s += "<tr><td>Noise floor </td><td>" + String(status.modeminfo.currentRssi) + "</td></tr>"; 
+  
   s += F("</table></div>");
   s += F("<div class=\"card\"><h3>Modem Configuration</h3><table id=""modemconfig"">");
   s += "<tr><td>Listening to </td><td>" + String(status.modeminfo.satellite) + "</td></tr>";
@@ -280,7 +285,7 @@ void ConfigManager::handleRefreshConsole()
   {
     Log::console(PSTR("COMMAND: %s"), svalue.c_str());
 
-    if (strcmp(svalue.c_str(), "p") == 0)
+    if (strcmp(svalue.c_str(), "!p") == 0)
     {
       if (!getAllowTx())
       {
@@ -399,8 +404,13 @@ void ConfigManager::handleRefreshWorldmap()
   data_string += String(getThingName()) + ",";
   data_string += String(status.version) + ",";
   data_string += String(status.mqtt_connected ? "<span class='G'>CONNECTED</span>" : "<span class='R'>NOT CONNECTED</span>") + ",";
-  if (WiFi.isConnected() ){
+  if (WiFi.isConnected())  
+  {
     data_string += String(WiFi.RSSI()) + ",";
+  }  
+  else  
+  {
+    data_string += String("<span class='R'>NOT CONNECTED</span>") + ",";
   }
   data_string += String(Radio::getInstance().isReady() ? "<span class='G'>READY</span>" : "<span class='R'>NOT READY</span>") + ",";
   Radio &radio = Radio::getInstance();
@@ -749,6 +759,16 @@ void ConfigManager::parseModemStartup()
         m.fsw[i] = 0;
     }
     m.enc= doc["enc"];
+    /////////////////////////////////////
+    m.whitening_seed= doc["ws"];
+    m.framing= doc["fr"];
+    m.crc_by_sw= doc["cSw"];
+    m.crc_nbytes= doc["cB"];
+    m.crc_init= doc["cI"];
+    m.crc_poly= doc["cP"];
+    m.crc_finalxor= doc["cF"];
+    m.crc_refIn= doc["cRI"];
+    m.crc_refOut= doc["cRO"];
   }
 
   // packets Filter

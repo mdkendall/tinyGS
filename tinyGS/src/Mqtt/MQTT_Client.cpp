@@ -515,6 +515,16 @@ void MQTT_Client::manageMQTTData(char *topic, uint8_t *payload, unsigned int len
           m.fsw[i] = 0;
       }
       m.enc= doc["enc"];
+      /////////////////////////////////////
+      m.whitening_seed= doc["ws"];
+      m.framing= doc["fr"];
+      m.crc_by_sw= doc["cSw"];
+      m.crc_nbytes= doc["cB"];
+      m.crc_init= doc["cI"];
+      m.crc_poly= doc["cP"];
+      m.crc_finalxor= doc["cF"];
+      m.crc_refIn= doc["cRI"];
+      m.crc_refOut= doc["cRO"];
     }
 
     // packets Filter
