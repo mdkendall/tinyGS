@@ -84,7 +84,8 @@ ConfigManager::ConfigManager()
   })
 {
   server.on(ROOT_URL, [this] { handleRoot(); });
-  server.on(FAVICON_URL, [this] { handleFavicon(); });
+  server.on(LOGO_URL, [this] { handleImage(LOGO_PNG, sizeof(LOGO_PNG)); });
+  server.on(FAVICON_URL, [this] { handleImage(FAVICON_PNG, sizeof(FAVICON_PNG)); });
   server.on(CONFIG_URL, [this] { handleConfig(); });
   server.on(DASHBOARD_URL, [this] { handleDashboard(); });
   server.on(RESTART_URL, [this] { handleRestart(); });
@@ -142,7 +143,7 @@ void ConfigManager::handleRoot()
   s += "<style>" + String(FPSTR(IOTWEBCONF_HTML_STYLE_INNER)) + "</style>";
   s += FPSTR(IOTWEBCONF_HTML_HEAD_END);
   s += FPSTR(IOTWEBCONF_HTML_BODY_INNER);
-  s += String(FPSTR(LOGO)) + "<br />";
+  s += "<div><img src=\"" + String(LOGO_URL) + "\"></div><br/>";
   s += "<button onclick=\"window.location.href='" + String(DASHBOARD_URL) + "';\">Station dashboard</button><br /><br />";
   s += "<button onclick=\"window.location.href='" + String(CONFIG_URL) + "';\">Configure parameters</button><br /><br />";
   s += "<button onclick=\"window.location.href='" + String(UPDATE_URL) + "';\">Upload new version</button><br /><br />";
@@ -155,9 +156,9 @@ void ConfigManager::handleRoot()
   server.send(200, "text/html; charset=UTF-8", s);
 }
 
-void ConfigManager::handleFavicon()
+void ConfigManager::handleImage(const char *data, size_t size)
 {
-  server.send_P(200, "image/png", FAVICON_PNG, sizeof(FAVICON_PNG));
+  server.send_P(200, "image/png", data, size);
 }
 
 void ConfigManager::handleDashboard()
@@ -181,7 +182,7 @@ void ConfigManager::handleDashboard()
   s += "<script>" + String(FPSTR(IOTWEBCONF_WORLDMAP_SCRIPT)) + "</script>";
   s += FPSTR(IOTWEBCONF_HTML_HEAD_END);
   s += FPSTR(IOTWEBCONF_DASHBOARD_BODY_INNER);
-  s += String(FPSTR(LOGO)) + "<br />";
+  s += "<div><img src=\"" + String(LOGO_URL) + "\"></div><br/>";
 
   // build svg of world map with animated satellite position
   uint ix = 0;
@@ -447,7 +448,7 @@ void ConfigManager::handleRestart()
   s += "<meta http-equiv=\"refresh\" content=\"8; url=/\">";
   s += FPSTR(IOTWEBCONF_HTML_HEAD_END);
   s += FPSTR(IOTWEBCONF_HTML_BODY_INNER);
-  s += String(FPSTR(LOGO)) + "<br />";
+  s += "<div><img src=\"" + String(LOGO_URL) + "\"></div><br/>";
   s += "Ground Station is restarting...<br /><br/>";
   s += FPSTR(IOTWEBCONF_HTML_END);
 
