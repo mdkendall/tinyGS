@@ -30,7 +30,6 @@
 
 extern Status status;
 
-
 enum RadioModelNum {
   RADIO_SX1278 = 1,
   RADIO_SX1276 = 2,
@@ -49,9 +48,11 @@ public:
 
   void init();
   int16_t begin();
+  void setFrequency();
   void enableInterrupt();
   void disableInterrupt();
   void startRx();
+  void tle();
   void currentRssi();
   int16_t moduleSleep();
   uint8_t listen();

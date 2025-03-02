@@ -231,12 +231,14 @@ void ConfigManager::handleDashboard()
   s += "<tr><td>WiFi RSSI </td><td>" + String(WiFi.isConnected() ? "<span class='G'>CONNECTED</span>" : "<span class='R'>NOT CONNECTED</span>") + "</td></tr>";
   s += "<tr><td>Radio </td><td>" + String(Radio::getInstance().isReady() ? "<span class='G'>READY</span>" : "<span class='R'>NOT READY</span>") + "</td></tr>";
   s += "<tr><td>Noise floor </td><td>" + String(status.modeminfo.currentRssi) + "</td></tr>"; 
-  
   s += F("</table></div>");
+
+
   s += F("<div class=\"card\"><h3>Modem Configuration</h3><table id=""modemconfig"">");
-  s += "<tr><td>Listening to </td><td>" + String(status.modeminfo.satellite) + "</td></tr>";
   s += "<tr><td>Modulation </td><td>" + String(status.modeminfo.modem_mode) + "</td></tr>";
   s += "<tr><td>Frequency </td><td>" + String(status.modeminfo.frequency) + "</td></tr>";
+  s += "<tr><td>Freq. Offset </td><td>" + String(status.modeminfo.freqOffset) + "</td></tr>";
+
   if (status.modeminfo.modem_mode == "LoRa")
   {
     s += "<tr><td>Spreading Factor </td><td>" + String(status.modeminfo.sf) + "</td></tr>";
@@ -249,6 +251,37 @@ void ConfigManager::handleDashboard()
     s += "<tr><td>Frequency dev </td><td>" + String(status.modeminfo.freqDev) + "</td></tr>";
     s += "<tr><td>Bandwidth </td><td>" + String(status.modeminfo.bw) + "</td></tr>";
   }
+
+  char timeStr[10];  // "13:45:21 "
+  time_t currentTime = time (NULL);
+  if (currentTime > 0) {
+      struct tm *timeinfo = gmtime (&currentTime);
+      snprintf_P (timeStr, sizeof (timeStr), "%02d:%02d:%02d ", timeinfo->tm_hour, timeinfo->tm_min, timeinfo->tm_sec);
+  }
+  else {
+      timeStr[0] = '\0';
+  }
+
+  s += F("</table></div><div class=\"card\"><h3>SAT info</h3><table id=""satinfo"">");
+  s += "<tr><td>Listening to </td><td>" + String(status.modeminfo.satellite) + "</td></tr>";
+  s += "<tr><td>Lat / Lon </td><td>" + String(status.tle.dSatLAT)+"º / "+  String(status.tle.dSatLON)+ "º </td></tr>";
+  s += "<tr><td>Az  / El  </td><td>" + String(status.tle.dSatAZ)+"º / "+  String(status.tle.dSatEL)+ "º </td></tr>";
+  s += "<tr><td>Doppler </td><td>" + String(status.tle.freqDoppler) + " Hz </td></tr>";
+  s += "<tr><td>UTC Time </td><td>" + String(timeStr) + "</td></tr>";
+
+  if (currentTime > 0) {
+    struct tm *timeinfo = localtime (&currentTime);
+    snprintf_P (timeStr, sizeof (timeStr), "%02d:%02d:%02d ", timeinfo->tm_hour, timeinfo->tm_min, timeinfo->tm_sec);
+  }
+  else {
+      timeStr[0] = '\0';
+  }
+
+  s += "<tr><td>Local Time </td><td>" + String(timeStr) + "</td></tr>";
+  s += F("</table></div>");
+
+
+
   s += F("</table></div><div class=\"card\"><h3>Last Packet Received</h3><table id=""lastpacket"">");
   s += "<tr><td>Received at </td><td>" + String(status.lastPacketInfo.time) + "</td></tr>";
   s += "<tr><td>Signal RSSI </td><td>" + String(status.lastPacketInfo.rssi) + "</td></tr>";
@@ -386,9 +419,8 @@ void ConfigManager::handleRefreshWorldmap()
   String data_string = cx + "," + cy + ",";
 
   // modem configuration (for modemconfig id table data)
-  data_string += String(status.modeminfo.satellite) + "," +
-                 String(status.modeminfo.modem_mode) + "," +
-                 String(status.modeminfo.frequency) + ",";
+  data_string += String(status.modeminfo.modem_mode) + "," +
+                 String(status.modeminfo.frequency) + "," + String(status.modeminfo.freqOffset) + ",";
   if (status.modeminfo.modem_mode == "LoRa")
   {
     data_string += String(status.modeminfo.sf) + ",";
@@ -400,6 +432,8 @@ void ConfigManager::handleRefreshWorldmap()
     data_string += String(status.modeminfo.freqDev) + ",";
   }
   data_string += String(status.modeminfo.bw) + ",";
+
+
 
   // ground station status (for gsstatus id table data)
   data_string += String(getThingName()) + ",";
@@ -417,13 +451,61 @@ void ConfigManager::handleRefreshWorldmap()
   Radio &radio = Radio::getInstance();
   radio.currentRssi();
   data_string += String(status.modeminfo.currentRssi) + ",";
+
+ if (status.modeminfo.tle[0] != 0) 
+   {
+        radio.tle();
+        Log::debug(PSTR("New dopler: %.5f MHz  Old dopler %.5f  dif %.5f "),  status.tle.new_freqDoppler, status.tle.freqDoppler, abs( status.tle.new_freqDoppler- status.tle.freqDoppler) );
+        if (abs( status.tle.new_freqDoppler- status.tle.freqDoppler) > 350) {
+           status.tle.freqDoppler = status.tle.new_freqDoppler;
+           radio.setFrequency();}
+  }
+
   
+ 
+   // sat_info
+   char timeStr[10];  // "13:45:21 "
+   time_t currentTime = time (NULL);
+   if (currentTime > 0) {
+       struct tm *timeinfo = gmtime (&currentTime);
+       snprintf_P (timeStr, sizeof (timeStr), "%02d:%02d:%02d ", timeinfo->tm_hour, timeinfo->tm_min, timeinfo->tm_sec);
+   }
+   else {
+       timeStr[0] = '\0';
+   }
+
+   data_string += String(status.modeminfo.satellite) + "," ;
+   data_string += String(status.tle.dSatLAT)+"º / "+  String(status.tle.dSatLON)+ "º ," ;
+   data_string += String(status.tle.dSatAZ)+"º / "+  String(status.tle.dSatEL)+ "º ," ;
+   data_string += String(status.tle.freqDoppler) + " Hz," ;
+ 
+   if (currentTime > 0) {
+    struct tm *timeinfo = gmtime (&currentTime);
+    snprintf_P (timeStr, sizeof (timeStr), "%02d:%02d:%02d ", timeinfo->tm_hour, timeinfo->tm_min, timeinfo->tm_sec);
+}
+else {
+    timeStr[0] = '\0';
+}
+   data_string += String(timeStr) + "," ;
+   
+   if (currentTime > 0) {
+    struct tm *timeinfo = localtime (&currentTime);
+    snprintf_P (timeStr, sizeof (timeStr), "%02d:%02d:%02d ", timeinfo->tm_hour, timeinfo->tm_min, timeinfo->tm_sec);
+}
+else {
+    timeStr[0] = '\0';
+}
+   data_string += String(timeStr) + "," ;
+ 
+
   // last packet received data (for lastpacket id table data)
   data_string += String(status.lastPacketInfo.time) + ",";
   data_string += String(status.lastPacketInfo.rssi) + ",";
   data_string += String(status.lastPacketInfo.snr) + ",";
   data_string += String(status.lastPacketInfo.frequencyerror) + ",";
   data_string += String(status.lastPacketInfo.crc_error ? "CRC ERROR!" : "");
+
+
   server.sendContent(data_string + "\n");
 
   server.sendContent("");

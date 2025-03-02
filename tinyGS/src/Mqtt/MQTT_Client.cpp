@@ -22,6 +22,7 @@
 #if ARDUINOJSON_USE_LONG_LONG == 0 && !PLATFORMIO
 #error "Using Arduino IDE is not recommended, please follow this guide https://github.com/G4lile0/tinyGS/wiki/Arduino-IDE or edit /ArduinoJson/src/ArduinoJson/Configuration.hpp and amend to #define ARDUINOJSON_USE_LONG_LONG 1 around line 68"
 #endif
+#include "mbedtls/base64.h"
 #include "../Radio/Radio.h"
 #include "../OTA/OTA.h"
 #include "../Logger/Logger.h"
@@ -220,7 +221,7 @@ void MQTT_Client::sendRx(String packet, bool noisy)
   struct timeval tv;
   gettimeofday(&tv, NULL);
 
-  const size_t capacity = JSON_ARRAY_SIZE(2) + JSON_OBJECT_SIZE(23) + 25;
+  const size_t capacity = JSON_ARRAY_SIZE(2) + JSON_OBJECT_SIZE(23) + 50;
   DynamicJsonDocument doc(capacity);
   JsonArray station_location = doc.createNestedArray("station_location");
   station_location.add(configManager.getLatitude());
@@ -228,8 +229,9 @@ void MQTT_Client::sendRx(String packet, bool noisy)
   doc["mode"] = status.modeminfo.modem_mode;
   doc["frequency"] = status.modeminfo.frequency;
   doc["frequency_offset"] = status.modeminfo.freqOffset;
+  doc["f_doppler"]= status.tle.freqDoppler;
   doc["satellite"] = status.modeminfo.satellite;
-
+  
   if (String(status.modeminfo.modem_mode) == "LoRa")
   {
     doc["sf"] = status.modeminfo.sf;
@@ -254,7 +256,7 @@ void MQTT_Client::sendRx(String packet, bool noisy)
   doc["NORAD"] = status.modeminfo.NORAD;
   doc["noisy"] = noisy;
 
-  char buffer[1536];
+  char buffer[1556];
   serializeJson(doc, buffer);
   Log::debug(PSTR("%s"), buffer);
   publish(buildTopic(teleTopic, topicRx).c_str(), buffer, false);
@@ -447,7 +449,7 @@ void MQTT_Client::manageMQTTData(char *topic, uint8_t *payload, unsigned int len
     
     if (!isValidFrequency(board.L_radio, doc["freq"]))
     {
-      Log::console(PSTR("ERROR: Wrong frequency. Ignoring."));
+      Log::console(PSTR("ERROR: Invalid frequency. Ignoring."));
       return;
     }
 
@@ -456,7 +458,7 @@ void MQTT_Client::manageMQTTData(char *topic, uint8_t *payload, unsigned int len
 
   if (!strcmp(command, commandBegine))
   {
-    size_t size = JSON_ARRAY_SIZE(10) + 10 * JSON_OBJECT_SIZE(2) + JSON_OBJECT_SIZE(16) + JSON_ARRAY_SIZE(8) + JSON_ARRAY_SIZE(8) + 64;
+    size_t size = JSON_ARRAY_SIZE(10) + 10 * JSON_OBJECT_SIZE(2) + JSON_OBJECT_SIZE(16) + JSON_ARRAY_SIZE(8) + JSON_ARRAY_SIZE(8) + 64 + 128;
     DynamicJsonDocument doc(size);
     DeserializationError error = deserializeJson(doc, payload, length);
 
@@ -473,7 +475,7 @@ void MQTT_Client::manageMQTTData(char *topic, uint8_t *payload, unsigned int len
     
     if (!isValidFrequency(board.L_radio, doc["freq"]))
     {
-      Log::console(PSTR("ERROR: Wrong frequency. Ignoring."));
+      Log::console(PSTR("ERROR: Invalid frequency. Ignoring."));
       return;
     }
    
@@ -536,8 +538,51 @@ void MQTT_Client::manageMQTTData(char *topic, uint8_t *payload, unsigned int len
       else
         status.modeminfo.filter[i] = 0;
     }
+     // sat tle
+    if (doc.containsKey("tle") && doc["tle"].is<const char*>()) {
+    const char* base64Tle = doc["tle"].as<const char*>();
+    size_t inputLen = strlen(base64Tle);
+    size_t outputLen = 0;
+    size_t maxTleSize = 64;
 
-    radio.begin();
+    // Calculate the maximum possible decoded length.
+    // Base64 expands roughly 4 bytes into 3.
+    size_t maxDecodedLength = (inputLen * 3 + 3) / 4;
+
+    if(maxDecodedLength > maxTleSize){
+      Serial.println("Error: Decoded TLE too large for buffer.");
+      return;
+    }
+
+    int ret = mbedtls_base64_decode(m.tle, maxTleSize, &outputLen, (const unsigned char*)base64Tle, inputLen);
+
+    if (ret == 0) {
+      // Decoding successful, 'm_tle' now contains the decoded data, and 'outputLen' is the length.
+      Serial.print("Base64 decoded. Length: ");
+      Serial.println(outputLen);
+
+      radio.tle();
+
+      //If you want to print the decoded data for debugging purposes:
+    
+      Serial.print("Decoded TLE: ");
+      for (size_t i = 0; i < outputLen; i++) {
+        Serial.print(m.tle[i], HEX); // Print in hexadecimal
+        Serial.print(" ");
+      }
+      Serial.println();
+    
+    } else {
+      Serial.print("Base64 decode error: ");
+      Serial.println(ret);
+    }
+  } else {
+    Serial.println("Error: 'tle' key not found or not a string.");
+    m.tle[0]= 0;
+    status.tle.freqDoppler = 0;
+  }
+
+  radio.begin();
 //    radio.currentRssi();
     result = 0;
   }

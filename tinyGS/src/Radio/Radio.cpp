@@ -24,11 +24,10 @@
 #endif
 #include <base64.h>
 #include "../Logger/Logger.h"
-
+#include <AioP13.h>
 //@estbhan
 //04/08/2023
 #include "../BitCode/BitCode.h"
-#include "../Satellites/Satellites.h"
 
 #define CHECK_ERROR(errCode) if (errCode != RADIOLIB_ERR_NONE) { Log::console(PSTR("Radio failed, code %d\n Check that the configuration is valid for your board"), errCode);status.radio_error=errCode; return errCode; }
 
@@ -110,12 +109,11 @@ int16_t Radio::begin()
     return -1;
   
   ModemInfo &m = status.modeminfo;
-
   if (m.modem_mode == "LoRa")
   {
     if (m.frequency != 0) 
     {
-      CHECK_ERROR(radioHal->begin(m.frequency + m.freqOffset, m.bw, m.sf, m.cr, m.sw, m.power, m.preambleLength, m.gain, board.L_TCXO_V));
+      CHECK_ERROR(radioHal->begin((status.modeminfo.frequency * 1000000 + (status.modeminfo.freqOffset +  status.tle.freqDoppler)) / 1000000, m.bw, m.sf, m.cr, m.sw, m.power, m.preambleLength, m.gain, board.L_TCXO_V));
       if (m.fldro == 2)
         radioHal->autoLDRO();
       else
@@ -130,7 +128,7 @@ int16_t Radio::begin()
   }
   else
   {
-    CHECK_ERROR(radioHal->beginFSK(m.frequency + m.freqOffset, m.bitrate, m.freqDev, m.bw, m.power, m.preambleLength, (m.OOK == 255), board.L_TCXO_V));
+    CHECK_ERROR(radioHal->beginFSK((status.modeminfo.frequency * 1000000 + (status.modeminfo.freqOffset +  status.tle.freqDoppler)) / 1000000, m.bitrate, m.freqDev, m.bw, m.power, m.preambleLength, (m.OOK == 255), board.L_TCXO_V));
     CHECK_ERROR(radioHal->setDataShaping(m.OOK));
     CHECK_ERROR(radioHal->setCRC(0));
     if (m.len!=0) CHECK_ERROR(radioHal->fixedPacketLengthMode(m.len));
@@ -153,13 +151,137 @@ int16_t Radio::begin()
   radioHal->setDio0Action(setFlag);
   // start listening for LoRa packets
   //Log::console(PSTR("[%s] Starting to listen to %s"), moduleNameString, m.satellite);
-  Log::console(PSTR("[%s] Starting to listen to %s @ %s mode @ %.4f MHz"), moduleNameString, m.satellite,m.modem_mode,m.frequency);
+  Log::console(PSTR("[%s] Starting to listen to %s @ %s mode @ %.4f MHz"), moduleNameString, m.satellite,m.modem_mode,(status.modeminfo.frequency * 1000000 + (status.modeminfo.freqOffset +  status.tle.freqDoppler)) / 1000000);
   CHECK_ERROR(radioHal->startReceive());
   status.modeminfo.currentRssi = radioHal->getRSSI(false,true);
 
   status.radio_ready = true;
   return RADIOLIB_ERR_NONE;
 }
+
+
+
+
+
+void Radio::tle()
+{
+
+if (status.modeminfo.tle[0] != 0) 
+{
+
+  #define MAP_MAXX    128
+  #define MAP_MAXY     64
+  
+  #define MAP_YOFFSET 20
+  int i;
+  char tmpstring[100];
+  //const char *tleName = "ISS (ZARYA)";
+  //const char *tlel1   = "1 25544U 98067A   20300.83097691  .00001534  00000-0  35580-4 0  9996";
+  //const char *tlel2   = "2 25544  51.6453  57.0843 0001671  64.9808  73.0513 15.49338189252428";
+  //const uint8_t tiny_tle[34] =  { 0x15, 0x01, 0x62, 0x05, 0x4D, 0xB5, 0xED, 0x00, 0x00, 0x04, 0xBB, 0x0E, 0xE8, 0xD3, 0x2C, 0x7D, 0x47, 0x00, 0x00, 0x48, 0x5A, 0x18, 0xE0, 0xEE, 0x1E, 0x14, 0xCD, 0x59, 0xA4, 0x45, 0x1C, 0x00, 0x1A, 0x4F };
+  
+
+  const char  *pcMyName = "tinyGS";    // Observer name
+  double       dMyLAT   = ConfigManager::getInstance().getLatitude();  // Latitude (Breitengrad): N -> +, S -> -
+  double       dMyLON   = ConfigManager::getInstance().getLongitude(); ;  // Longitude (Längengrad): E -> +, W -> -
+  double       dMyALT   = 800.0;       // Altitude ASL (m)
+  
+  double       dfreqRX  = status.modeminfo.frequency;     // Nominal downlink frequency
+  double       dfreqTX  = status.modeminfo.frequency;     // Nominal uplink frequency
+  
+  struct tm *timeinfo;
+  time_t currenttime = time(NULL);
+  timeinfo = gmtime(&currenttime);
+
+  int          iYear    = 1900 + timeinfo->tm_year;   // Set start year
+  int          iMonth   = 1+ timeinfo->tm_mon;        // Set start month
+  int          iDay     = timeinfo->tm_mday;          // Set start day
+  int          iHour    = timeinfo->tm_hour;          // Set start hour
+  int          iMinute  = timeinfo->tm_min;           // Set start minute
+  int          iSecond  = timeinfo->tm_sec;           // Set start second
+  
+  // Expecting the ISS to be at 289,61° elevation and 20,12° azimuth (Gpredict)
+  // Result will be 289,74° elevation and 20,44° azimuth...
+  // Expecting the sun to be at -60.79° elevation and 0.86° azimuth (https://www.sunearthtools.com/dp/tools/pos_sun.php)
+  // Result will be -60.79° elevation and 0.89° azimuth...
+  
+  
+  double       dSunLAT  = 0;           // Sun latitude
+  double       dSunLON  = 0;           // Sun longitude
+  double       dSunAZ   = 0;           // Sun azimuth
+  double       dSunEL   = 0;           // Sun elevation
+  
+  //int          ixQTH    = 0;           // Map pixel coordinate x of QTH
+  //int          iyQTH    = 0;           // Map pixel coordinate y of QTH
+  int          ixSAT    = 0;           // Map pixel coordinate x of satellite
+  int          iySAT    = 0;           // Map pixel coordinate y of satellite
+  //int          ixSUN    = 0;           // Map pixel coordinate x of sun
+  //int          iySUN    = 0;           // Map pixel coordinate y of sun
+  
+  char         acBuffer[20];            // Buffer for ASCII time
+  
+  int          aiSatFP[90][2];          // Array for storing the satellite footprint map coordinates
+  int          aiSunFP[180][2];         // Array for storing the sunlight footprint map coordinates
+  P13Sun Sun;                                                       // Create object for the sun
+  P13DateTime MyTime(iYear, iMonth, iDay, iHour, iMinute, iSecond); // Set start time for the prediction
+  P13Observer MyQTH(pcMyName, dMyLAT, dMyLON, dMyALT);              // Set observer coordinates
+  P13Satellite_tGS MySAT(status.modeminfo.tle);             // Create ISS data from TLE
+
+
+  // latlon2xy(ixQTH, iyQTH, dMyLAT, dMyLON, MAP_MAXX, MAP_MAXY);      // Get x/y for the pixel map 
+  //Serial.printf("\r\nPrediction for %s at %s (MAP %dx%d: x = %d,y = %d):\r\n\r\n", MySAT.c_ccSatName, MyQTH.c_ccObsName, MAP_MAXX, MAP_MAXY, ixQTH, iyQTH);
+  Log::debug(PSTR( "Prediction for %s at %s"), MySAT.c_ccSatName, MyQTH.c_ccObsName);
+  Log::debug(PSTR("(Lat = %.4f%c, Lon = %.4f%c), Alt = %.1fm ASL):"), dMyLAT, (char)39, dMyLON, (char)39, dMyALT);
+  MyTime.ascii(acBuffer);             // Get time for prediction as ASCII string
+  MySAT.predict(MyTime);              // Predict ISS for specific time
+  MySAT.latlon(status.tle.dSatLAT, status.tle.dSatLON);     // Get the rectangular coordinates
+  MySAT.elaz(MyQTH, status.tle.dSatEL, status.tle.dSatAZ);  // Get azimut and elevation for MyQTH
+
+  latlon2xy(ixSAT, iySAT, status.tle.dSatLAT, status.tle.dSatLON, MAP_MAXX, MAP_MAXY);  // Get x/y for the pixel map
+  status.satPos[0]= ixSAT;
+  status.satPos[1]= iySAT;
+  
+
+  Log::debug(PSTR("%s -> Lat: %.4f Lon: %.4f (MAP %dx%d: x = %d,y = %d) Az: %.2f El: %.2f\r\n\r\n"), acBuffer, status.tle.dSatLAT, status.tle.dSatLON, MAP_MAXX, MAP_MAXY, ixSAT, iySAT, status.tle.dSatAZ, status.tle.dSatEL);
+  Log::debug(PSTR( "%s UTC"), acBuffer);
+  Log::debug(PSTR( "Lat: %.2f%c Lon: %.2f%c Az: %.2f%c El: %.2f%c"), status.tle.dSatLAT, (char)39, status.tle.dSatLON, (char)39, status.tle.dSatAZ, (char)39, status.tle.dSatEL, (char)39);
+  Log::debug(PSTR("RX: %.6f MHz, TX: %.6f MHz\r\n\r\n"), MySAT.doppler(dfreqRX, P13_FRX), MySAT.doppler(dfreqTX, P13_FTX));
+  Log::debug(PSTR( "RX: %.5f MHz"), MySAT.doppler(dfreqRX, P13_FRX));
+
+
+  status.tle.new_freqDoppler = (MySAT.doppler(dfreqRX, P13_FRX)- dfreqRX )*1000000 ;
+  
+  
+  //Log::console(PSTR("[%s] Starting to listen to %s @ %s mode @ %.4f MHz"), moduleNameString, m.satellite,m.modem_mode,(status.modeminfo.frequency * 1000000 + (status.modeminfo.freqOffset +  status.tle.freqDoppler)) / 1000000);
+
+
+  //Serial.println( status.tle.freqDoppler );
+  //sprintf(tmpstring, "TX: %.5f MHz", MySAT.doppler(dfreqTX, P13_FTX));
+
+  
+  // Calcualte ISS footprint
+  //Serial.printf("Satellite footprint map coordinates:\n\r");
+  
+   // MySAT.footprint(aiSatFP, (sizeof(aiSatFP)/sizeof(int)/2), MAP_MAXX, MAP_MAXY, status.tle.dSatLAT, status.tle.dSatLON);
+
+  // Predict sun
+  //Sun.predict(MyTime);                // Predict ISS for specific time
+  //Sun.latlon(dSunLAT, dSunLON);       // Get the rectangular coordinates
+  //Sun.elaz(MyQTH, dSunEL, dSunAZ);    // Get azimut and elevation for MyQTH
+
+  //latlon2xy(ixSUN, iySUN, dSunLAT, dSunLON, MAP_MAXX, MAP_MAXY);
+
+  //Serial.printf("\r\nSun -> Lat: %.4f Lon: %.4f (MAP %dx%d: x = %d,y = %d) Az: %.2f El: %.2f\r\n\r\n", dSunLAT, dSunLON, MAP_MAXX, MAP_MAXY, ixSUN, iySUN, dSunAZ, dSunEL);
+
+  
+} else {
+
+  status.tle.freqDoppler = 0;
+
+}
+
+}
+
 
 void Radio::setFlag()
 {
@@ -199,6 +321,29 @@ void Radio::startRx()
   status.modeminfo.currentRssi = radioHal->getRSSI(false,true);
 
 }
+
+void Radio::setFrequency()
+{
+  // get current RSSI
+  begin();
+  //radioHal->setFrequency( (status.modeminfo.frequency * 1000000 + (status.modeminfo.freqOffset +  status.tle.freqDoppler)) / 1000000);
+  Log::debug(PSTR("base: %.6f Offset  %.6f Doppler %.6f -> Modem %.6f "),status.modeminfo.frequency, status.modeminfo.freqOffset,status.tle.freqDoppler,(status.modeminfo.frequency * 1000000 + (status.modeminfo.freqOffset +  status.tle.freqDoppler)) / 1000000);
+  //Serial.print("base: ;
+  //Serial.println( status.modeminfo.frequency ,4 );
+  //Serial.print("offset: ");
+  //Serial.println( status.modeminfo.freqOffset , 4 );
+  //Serial.print("Dopler: " );
+  //Serial.println( status.tle.freqDoppler ,4 );
+  //Serial.print("modem: ");
+  //Serial.println( (status.modeminfo.frequency * 1000000 + (status.modeminfo.freqOffset +  status.tle.freqDoppler)) / 1000000 , 4);
+
+
+
+
+}
+
+
+
 
 int16_t Radio::sendTx(uint8_t *data, size_t length)
 {
@@ -531,12 +676,15 @@ int16_t Radio::remoteSetFreqOffset(char *payload, size_t payload_len)
 {
   float frequency_offset = _atof(payload, payload_len);
   Log::console(PSTR("Set Frequency OffSet to %.3f Hz"), frequency_offset);
-  status.modeminfo.freqOffset = frequency_offset / 1000000;
-  status.radio_ready = false;
-  CHECK_ERROR(radioHal->sleep());  // sleep mandatory if FastHop isn't ON.
-  CHECK_ERROR(radioHal->setFrequency(status.modeminfo.frequency+status.modeminfo.freqOffset)); 
-  CHECK_ERROR(radioHal->startReceive()); 
-  status.radio_ready = true;
+  status.modeminfo.freqOffset = frequency_offset ;
+  //status.radio_ready = false;
+  //CHECK_ERROR(radioHal->sleep());  // sleep mandatory if FastHop isn't ON.
+  //delay(150);
+  //CHECK_ERROR(radioHal->setFrequency(status.modeminfo.frequency * 1000000 + (status.modeminfo.freqOffset +  status.tle.freqDoppler)) / 1000000); 
+  //delay(150);
+  //CHECK_ERROR(radioHal->startReceive()); 
+  //delay(150);
+  //status.radio_ready = true;
   return RADIOLIB_ERR_NONE;
 }
 

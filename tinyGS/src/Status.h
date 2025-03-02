@@ -34,9 +34,10 @@ struct PacketInfo {
 
 struct ModemInfo {
   char satellite[25]  = "Waiting";
+  uint8_t tle[34];
   String  modem_mode  = "LoRa" ;     // 1-LoRa  2-FSK  3-GMSK
   float   frequency   = 0; // MHz  
-  float   freqOffset  = 0;       // Hz 
+  float   freqOffset  = 0; // Hz 
   float   bw          = 0;   // kHz dual sideban
   uint8_t sf          = 0 ;
   uint8_t cr          = 0 ;
@@ -76,8 +77,18 @@ struct TextFrame {
   String text = "123456789012345678901234567890";
 };
 
+struct Tle {   
+  float        freqDoppler = 0; // Hz
+  float        new_freqDoppler = 0; // Hz
+  double       dSatLAT  = 0;           // Satellite latitude
+  double       dSatLON  = 0;           // Satellite longitude
+  double       dSatAZ   = 0;           // Satellite azimuth
+  double       dSatEL   = 0;           // Satellite elevation
+ };
+
+ 
 struct Status {
-  const uint32_t version = 2502231; // version year month day release
+  const uint32_t version = 2503025; // version year month day release
   const char* git_version = GIT_VERSION;
   bool mqtt_connected = false;
   bool radio_ready = false;
@@ -88,6 +99,7 @@ struct Status {
   uint8_t remoteTextFrameLength[4] = {0, 0, 0, 0};
   TextFrame remoteTextFrame[4][15];
   float time_offset = 0;
+  Tle tle;
  };
 
 #endif
