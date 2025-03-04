@@ -179,6 +179,16 @@ public:
     strcpy(advancedConfig, adv_prmStr);
     this->saveConfig();
   }
+  void setLat(const char *buffer)
+  {
+    strcpy(latitude, buffer);
+    this->saveConfig();
+  }
+  void setLon(const char *buffer)
+  {
+    strcpy(longitude, buffer);
+    this->saveConfig();
+  }
   const char *getBoardTemplate() { return boardTemplate; }
   void setBoardTemplate(const char *boardTemplateStr)
   {
@@ -268,7 +278,6 @@ private:
   AdvancedConfig advancedConf;
   char savedThingName[IOTWEBCONF_WORD_LEN] = "";
   bool remoteSave = false;
-
   char latitude[COORDINATE_LENGTH] = "";
   char longitude[COORDINATE_LENGTH] = "";
   char tz[TZ_LENGTH] = "";

@@ -78,17 +78,18 @@ struct TextFrame {
 };
 
 struct Tle {   
-  float        freqDoppler = 0; // Hz
-  float        new_freqDoppler = 0; // Hz
+  float        freqDoppler = 0;        // Hz
+  float        new_freqDoppler = 0;    // Hz
   double       dSatLAT  = 0;           // Satellite latitude
   double       dSatLON  = 0;           // Satellite longitude
   double       dSatAZ   = 0;           // Satellite azimuth
   double       dSatEL   = 0;           // Satellite elevation
+  double       tgsALT   = 500;         // station altitude 
  };
 
  
 struct Status {
-  const uint32_t version = 2503025; // version year month day release
+  const uint32_t version = 2503041; // version: year month day release
   const char* git_version = GIT_VERSION;
   bool mqtt_connected = false;
   bool radio_ready = false;

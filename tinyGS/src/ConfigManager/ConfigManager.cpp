@@ -264,11 +264,20 @@ void ConfigManager::handleDashboard()
 
   s += F("</table></div><div class=\"card\"><h3>SAT info</h3><table id=""satinfo"">");
   s += "<tr><td>Listening to </td><td>" + String(status.modeminfo.satellite) + "</td></tr>";
-  s += "<tr><td>Lat / Lon </td><td>" + String(status.tle.dSatLAT)+"º / "+  String(status.tle.dSatLON)+ "º </td></tr>";
-  s += "<tr><td>Az  / El  </td><td>" + String(status.tle.dSatAZ)+"º / "+  String(status.tle.dSatEL)+ "º </td></tr>";
-  s += "<tr><td>Doppler </td><td>" + String(status.tle.freqDoppler) + " Hz </td></tr>";
-  s += "<tr><td>UTC Time </td><td>" + String(timeStr) + "</td></tr>";
+  if (status.modeminfo.tle[0] != 0) {
+    s += "<tr><td>Lat / Lon </td><td>" + String(status.tle.dSatLAT)+"º / "+  String(status.tle.dSatLON)+ "º </td></tr>";
+    s += "<tr><td>Az  / El  </td><td>" + String(status.tle.dSatAZ)+"º / "+  String(status.tle.dSatEL)+ "º </td></tr>";
+    s += "<tr><td>Doppler </td><td>" + String(status.tle.new_freqDoppler) + " Hz </td></tr>";
+  } else 
+  {
+    s += "<tr><td>Lat / Lon </td><td> - / - </td></tr>";
+    s += "<tr><td>Az  / El  </td><td> - / - </td></tr>";
+    s += "<tr><td>Doppler </td><td>  -  </td></tr>";
+  }
+  
+  
 
+  s += "<tr><td>UTC Time </td><td>" + String(timeStr) + "</td></tr>";
   if (currentTime > 0) {
     struct tm *timeinfo = localtime (&currentTime);
     snprintf_P (timeStr, sizeof (timeStr), "%02d:%02d:%02d ", timeinfo->tm_hour, timeinfo->tm_min, timeinfo->tm_sec);
@@ -276,8 +285,8 @@ void ConfigManager::handleDashboard()
   else {
       timeStr[0] = '\0';
   }
-
   s += "<tr><td>Local Time </td><td>" + String(timeStr) + "</td></tr>";
+
   s += F("</table></div>");
 
 
@@ -455,7 +464,7 @@ void ConfigManager::handleRefreshWorldmap()
  if (status.modeminfo.tle[0] != 0) 
    {
         radio.tle();
-        Log::debug(PSTR("New dopler: %.5f MHz  Old dopler %.5f  dif %.5f "),  status.tle.new_freqDoppler, status.tle.freqDoppler, abs( status.tle.new_freqDoppler- status.tle.freqDoppler) );
+        Log::debug(PSTR("New dopler: %.2f Hz  Old dopler %.2f Hz dif %.2f Hz"),  status.tle.new_freqDoppler, status.tle.freqDoppler, abs( status.tle.new_freqDoppler- status.tle.freqDoppler) );
         if (abs( status.tle.new_freqDoppler- status.tle.freqDoppler) > 350) {
            status.tle.freqDoppler = status.tle.new_freqDoppler;
            radio.setFrequency();}
@@ -475,9 +484,15 @@ void ConfigManager::handleRefreshWorldmap()
    }
 
    data_string += String(status.modeminfo.satellite) + "," ;
+   if (status.modeminfo.tle[0] != 0) {
    data_string += String(status.tle.dSatLAT)+"º / "+  String(status.tle.dSatLON)+ "º ," ;
    data_string += String(status.tle.dSatAZ)+"º / "+  String(status.tle.dSatEL)+ "º ," ;
-   data_string += String(status.tle.freqDoppler) + " Hz," ;
+   data_string += String( status.tle.new_freqDoppler) + " Hz," ; 
+   } else    {
+   data_string += " - / - ," ;
+   data_string += " - / - ," ;
+   data_string += " - ," ;
+   }
  
    if (currentTime > 0) {
     struct tm *timeinfo = gmtime (&currentTime);

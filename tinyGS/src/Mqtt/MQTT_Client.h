@@ -67,11 +67,11 @@ private:
   String buildTopic(const char * baseTopic, const char * cmnd);
   void subscribeToAll();
   void manageSatPosOled(char* payload, size_t payload_len);
+  void manageSetPosParameters(char* payload, size_t payload_len);
   void remoteSatCmnd(char* payload, size_t payload_len);
   void remoteSatFilter(char* payload, size_t payload_len);
   void remoteGoToSleep(char* payload, size_t payload_len);
   void remoteGoToSiesta(char* payload, size_t payload_len);
-
 
   int  voltage();
   
@@ -134,6 +134,7 @@ private:
   const char* commandSetFreqOffset PROGMEM= "foff";
   const char* commandSetAdvParameters PROGMEM= "set_adv_prm";
   const char* commandGetAdvParameters PROGMEM= "get_adv_prm";
+  const char* commandSetPosParameters PROGMEM= "set_pos_prm"; 
     // GOD MODE  With great power comes great responsibility!
   const char* commandSPIsetRegValue PROGMEM= "SPIsetRegValue";
   const char* commandSPIwriteRegister PROGMEM= "SPIwriteRegister";

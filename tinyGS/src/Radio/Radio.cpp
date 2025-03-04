@@ -180,11 +180,10 @@ if (status.modeminfo.tle[0] != 0)
   //const char *tlel2   = "2 25544  51.6453  57.0843 0001671  64.9808  73.0513 15.49338189252428";
   //const uint8_t tiny_tle[34] =  { 0x15, 0x01, 0x62, 0x05, 0x4D, 0xB5, 0xED, 0x00, 0x00, 0x04, 0xBB, 0x0E, 0xE8, 0xD3, 0x2C, 0x7D, 0x47, 0x00, 0x00, 0x48, 0x5A, 0x18, 0xE0, 0xEE, 0x1E, 0x14, 0xCD, 0x59, 0xA4, 0x45, 0x1C, 0x00, 0x1A, 0x4F };
   
-
   const char  *pcMyName = "tinyGS";    // Observer name
   double       dMyLAT   = ConfigManager::getInstance().getLatitude();  // Latitude (Breitengrad): N -> +, S -> -
   double       dMyLON   = ConfigManager::getInstance().getLongitude(); ;  // Longitude (Längengrad): E -> +, W -> -
-  double       dMyALT   = 800.0;       // Altitude ASL (m)
+  double       dMyALT   = status.tle.tgsALT;      // Altitude ASL (m)
   
   double       dfreqRX  = status.modeminfo.frequency;     // Nominal downlink frequency
   double       dfreqTX  = status.modeminfo.frequency;     // Nominal uplink frequency
@@ -230,8 +229,8 @@ if (status.modeminfo.tle[0] != 0)
 
   // latlon2xy(ixQTH, iyQTH, dMyLAT, dMyLON, MAP_MAXX, MAP_MAXY);      // Get x/y for the pixel map 
   //Serial.printf("\r\nPrediction for %s at %s (MAP %dx%d: x = %d,y = %d):\r\n\r\n", MySAT.c_ccSatName, MyQTH.c_ccObsName, MAP_MAXX, MAP_MAXY, ixQTH, iyQTH);
-  Log::debug(PSTR( "Prediction for %s at %s"), MySAT.c_ccSatName, MyQTH.c_ccObsName);
-  Log::debug(PSTR("(Lat = %.4f%c, Lon = %.4f%c), Alt = %.1fm ASL):"), dMyLAT, (char)39, dMyLON, (char)39, dMyALT);
+  //Log::debug(PSTR( "Prediction for %s at %s"), MySAT.c_ccSatName, MyQTH.c_ccObsName);
+  Log::debug(PSTR("Prediction for (Lat = %.2f%c, Lon = %.2f%c), Alt = %.1f m ASL):"), dMyLAT, (char)39, dMyLON, (char)39, dMyALT);
   MyTime.ascii(acBuffer);             // Get time for prediction as ASCII string
   MySAT.predict(MyTime);              // Predict ISS for specific time
   MySAT.latlon(status.tle.dSatLAT, status.tle.dSatLON);     // Get the rectangular coordinates
@@ -241,12 +240,11 @@ if (status.modeminfo.tle[0] != 0)
   status.satPos[0]= ixSAT;
   status.satPos[1]= iySAT;
   
-
-  Log::debug(PSTR("%s -> Lat: %.4f Lon: %.4f (MAP %dx%d: x = %d,y = %d) Az: %.2f El: %.2f\r\n\r\n"), acBuffer, status.tle.dSatLAT, status.tle.dSatLON, MAP_MAXX, MAP_MAXY, ixSAT, iySAT, status.tle.dSatAZ, status.tle.dSatEL);
-  Log::debug(PSTR( "%s UTC"), acBuffer);
-  Log::debug(PSTR( "Lat: %.2f%c Lon: %.2f%c Az: %.2f%c El: %.2f%c"), status.tle.dSatLAT, (char)39, status.tle.dSatLON, (char)39, status.tle.dSatAZ, (char)39, status.tle.dSatEL, (char)39);
-  Log::debug(PSTR("RX: %.6f MHz, TX: %.6f MHz\r\n\r\n"), MySAT.doppler(dfreqRX, P13_FRX), MySAT.doppler(dfreqTX, P13_FTX));
-  Log::debug(PSTR( "RX: %.5f MHz"), MySAT.doppler(dfreqRX, P13_FRX));
+  //Log::debug(PSTR("%s -> Lat: %.4f Lon: %.4f (MAP %dx%d: x = %d,y = %d) Az: %.2f El: %.2f\r\n\r\n"), acBuffer, status.tle.dSatLAT, status.tle.dSatLON, MAP_MAXX, MAP_MAXY, ixSAT, iySAT, status.tle.dSatAZ, status.tle.dSatEL);
+  //Log::debug(PSTR( "%s UTC"), acBuffer);
+  //Log::debug(PSTR( "Lat: %.2f%c Lon: %.2f%c Az: %.2f%c El: %.2f%c"), status.tle.dSatLAT, (char)39, status.tle.dSatLON, (char)39, status.tle.dSatAZ, (char)39, status.tle.dSatEL, (char)39);
+  //Log::debug(PSTR("RX: %.6f MHz, TX: %.6f MHz\r\n\r\n"), MySAT.doppler(dfreqRX, P13_FRX), MySAT.doppler(dfreqTX, P13_FTX));
+  //Log::debug(PSTR( "RX: %.5f MHz"), MySAT.doppler(dfreqRX, P13_FRX));
 
 
   status.tle.new_freqDoppler = (MySAT.doppler(dfreqRX, P13_FRX)- dfreqRX )*1000000 ;
@@ -327,7 +325,7 @@ void Radio::setFrequency()
   // get current RSSI
   begin();
   //radioHal->setFrequency( (status.modeminfo.frequency * 1000000 + (status.modeminfo.freqOffset +  status.tle.freqDoppler)) / 1000000);
-  Log::debug(PSTR("base: %.6f Offset  %.6f Doppler %.6f -> Modem %.6f "),status.modeminfo.frequency, status.modeminfo.freqOffset,status.tle.freqDoppler,(status.modeminfo.frequency * 1000000 + (status.modeminfo.freqOffset +  status.tle.freqDoppler)) / 1000000);
+  Log::debug(PSTR("Base: %.4f Offset  %.2f Doppler %.2f -> Modem %.4f "),status.modeminfo.frequency, status.modeminfo.freqOffset,status.tle.freqDoppler,(status.modeminfo.frequency * 1000000 + (status.modeminfo.freqOffset +  status.tle.freqDoppler)) / 1000000);
   //Serial.print("base: ;
   //Serial.println( status.modeminfo.frequency ,4 );
   //Serial.print("offset: ");

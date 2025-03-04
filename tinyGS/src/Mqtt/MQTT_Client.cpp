@@ -229,7 +229,7 @@ void MQTT_Client::sendRx(String packet, bool noisy)
   doc["mode"] = status.modeminfo.modem_mode;
   doc["frequency"] = status.modeminfo.frequency;
   doc["frequency_offset"] = status.modeminfo.freqOffset;
-  doc["f_doppler"]= status.tle.freqDoppler;
+  if (status.tle.freqDoppler!=0)  doc["f_doppler"]= status.tle.freqDoppler;
   doc["satellite"] = status.modeminfo.satellite;
   
   if (String(status.modeminfo.modem_mode) == "LoRa")
@@ -550,34 +550,36 @@ void MQTT_Client::manageMQTTData(char *topic, uint8_t *payload, unsigned int len
     size_t maxDecodedLength = (inputLen * 3 + 3) / 4;
 
     if(maxDecodedLength > maxTleSize){
-      Serial.println("Error: Decoded TLE too large for buffer.");
+ //     Serial.println("Error: Decoded TLE too large for buffer.");
       return;
     }
 
     int ret = mbedtls_base64_decode(m.tle, maxTleSize, &outputLen, (const unsigned char*)base64Tle, inputLen);
 
+    
     if (ret == 0) {
       // Decoding successful, 'm_tle' now contains the decoded data, and 'outputLen' is the length.
-      Serial.print("Base64 decoded. Length: ");
-      Serial.println(outputLen);
+     // Serial.print("Base64 decoded. Length: ");
+     // Serial.println(outputLen);
 
       radio.tle();
 
       //If you want to print the decoded data for debugging purposes:
     
+      /*
       Serial.print("Decoded TLE: ");
       for (size_t i = 0; i < outputLen; i++) {
         Serial.print(m.tle[i], HEX); // Print in hexadecimal
         Serial.print(" ");
       }
       Serial.println();
-    
+     */
     } else {
-      Serial.print("Base64 decode error: ");
-      Serial.println(ret);
+     // Serial.print("Base64 decode error: ");
+     // Serial.println(ret);
     }
   } else {
-    Serial.println("Error: 'tle' key not found or not a string.");
+   // Serial.println("Error: 'tle' key not found or not a string.");
     m.tle[0]= 0;
     status.tle.freqDoppler = 0;
   }
@@ -688,11 +690,23 @@ void MQTT_Client::manageMQTTData(char *topic, uint8_t *payload, unsigned int len
     buff[length] = '\0';
     Log::debug(PSTR("%s"), buff);
     ConfigManager::getInstance().setAvancedConfig(buff);
+    result = 0;
   }
+
+  
+  if (!strcmp(command, commandSetPosParameters))
+  {
+   
+    manageSetPosParameters((char *)payload, length);
+    return; // no ack
+
+  }
+
 
   if (!strcmp(command, commandGetAdvParameters))
   {
     sendAdvParameters();
+    result = 0;
     return;
   }
 
@@ -794,6 +808,51 @@ void MQTT_Client::manageMQTTData(char *topic, uint8_t *payload, unsigned int len
   if (!global)
     publish(buildTopic(statTopic, command).c_str(), (uint8_t *)&result, 2U, false);
 }
+
+
+void MQTT_Client::manageSetPosParameters(char *payload, size_t payload_len)
+{
+
+  DynamicJsonDocument doc(90);
+  deserializeJson(doc, payload, payload_len);
+  if (doc.size()==1) {
+    status.tle.tgsALT = doc[0];
+    Log::debug(PSTR("Alt received= %.1f "),status.tle.tgsALT );
+  }
+
+  if (doc.size()==3) {
+  
+    float receivedLat = doc[0];
+    float receivedLon = doc[1];
+    status.tle.tgsALT = doc[2];
+    //char buff[length + 1];
+    //memcpy(buff, payload, length);
+    //buff[length] = '\0';
+    //Log::debug(PSTR("%s"), buff);
+    float currentLat   = ConfigManager::getInstance().getLatitude();  // Latitude (Breitengrad): N -> +, S -> -
+    float currentLon   = ConfigManager::getInstance().getLongitude(); ;  // Longitude (Längengrad): E -> +, W -> -
+    Log::debug(PSTR("Lat received= %.3f Lat local= %.3f"),receivedLat,currentLat );
+    Log::debug(PSTR("Lon received= %.3f Lon local= %.3f"),receivedLon,currentLon );
+    Log::debug(PSTR("Alt received= %.1f "),status.tle.tgsALT );
+    if (receivedLat != currentLat) {
+          Log::debug(PSTR("Lat received= %.3f Lat local= %.3f"),receivedLat,currentLat );
+          char buff[10];
+          sprintf(buff, "%.3f", receivedLat);
+          Log::debug(PSTR("%s"), buff);
+          ConfigManager::getInstance().setLat(buff);
+        }
+
+    if (receivedLon != currentLon) {
+          Log::debug(PSTR("Lat received= %.3f Lat local= %.3f"),receivedLon,currentLon );
+          char buff[10];
+          sprintf(buff, "%.3f", receivedLon);
+          Log::debug(PSTR("%s"), buff);
+          ConfigManager::getInstance().setLon(buff);
+        } 
+  }
+
+}
+
 
 void MQTT_Client::manageSatPosOled(char *payload, size_t payload_len)
 {
