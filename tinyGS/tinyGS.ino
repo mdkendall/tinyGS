@@ -167,6 +167,8 @@ void setup()
   printControls();
 }
 
+unsigned long lastTleRefresh = 0;
+
 void loop() {  
   configManager.doLoop();
   if (configManager.isFailSafeActive())
@@ -214,7 +216,16 @@ void loop() {
   mqtt.loop();
   OTA::loop();
   if (configManager.getOledBright() != 0) displayUpdate();
+  
+  // Update TLE
+  unsigned long currentTime = millis();
+  if (currentTime - lastTleRefresh >= status.tle.refresh) {
+      lastTleRefresh = currentTime;
+      radio.tle();
+  }
+
 }
+
 
 void setupNTP()
 {

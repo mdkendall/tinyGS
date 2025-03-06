@@ -461,16 +461,6 @@ void ConfigManager::handleRefreshWorldmap()
   radio.currentRssi();
   data_string += String(status.modeminfo.currentRssi) + ",";
 
- if (status.modeminfo.tle[0] != 0) 
-   {
-        radio.tle();
-        Log::debug(PSTR("New dopler: %.2f Hz  Old dopler %.2f Hz dif %.2f Hz"),  status.tle.new_freqDoppler, status.tle.freqDoppler, abs( status.tle.new_freqDoppler- status.tle.freqDoppler) );
-        if (abs( status.tle.new_freqDoppler- status.tle.freqDoppler) > 350) {
-           status.tle.freqDoppler = status.tle.new_freqDoppler;
-           radio.setFrequency();}
-  }
-
-  
  
    // sat_info
    char timeStr[10];  // "13:45:21 "

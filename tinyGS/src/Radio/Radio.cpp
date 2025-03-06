@@ -271,6 +271,10 @@ if (status.modeminfo.tle[0] != 0)
 
   //Serial.printf("\r\nSun -> Lat: %.4f Lon: %.4f (MAP %dx%d: x = %d,y = %d) Az: %.2f El: %.2f\r\n\r\n", dSunLAT, dSunLON, MAP_MAXX, MAP_MAXY, ixSUN, iySUN, dSunAZ, dSunEL);
 
+  Log::debug(PSTR("New dopler: %.2f Hz  Old dopler %.2f Hz dif %.2f Hz"),  status.tle.new_freqDoppler, status.tle.freqDoppler, abs( status.tle.new_freqDoppler- status.tle.freqDoppler) );
+  if (abs( status.tle.new_freqDoppler- status.tle.freqDoppler) >  status.tle.freqTol) {
+     status.tle.freqDoppler = status.tle.new_freqDoppler;
+     setFrequency();}
   
 } else {
 
