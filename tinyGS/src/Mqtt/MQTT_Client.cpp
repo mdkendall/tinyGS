@@ -702,6 +702,13 @@ void MQTT_Client::manageMQTTData(char *topic, uint8_t *payload, unsigned int len
 
   }
 
+  if (!strcmp(command, commandSetName))
+  {
+   
+    manageSetName((char *)payload, length);
+    return; // no ack
+  }
+
 
   if (!strcmp(command, commandGetAdvParameters))
   {
@@ -852,6 +859,55 @@ void MQTT_Client::manageSetPosParameters(char *payload, size_t payload_len)
   }
 
 }
+
+
+
+void MQTT_Client::manageSetName(char *payload, size_t payload_len)
+{
+  DynamicJsonDocument doc(128);
+  DeserializationError error = deserializeJson(doc, payload, payload_len);
+
+  if (error) {
+    Serial.print(F("deserializeJson() failed: "));
+    Serial.println(error.c_str());
+    return;
+  }
+
+  if (doc.is<JsonArray>() && doc.size() == 2) {
+    const char* received_mac_temp = doc[0].as<const char*>();
+    const char* new_name_temp = doc[1].as<const char*>();
+
+    if (received_mac_temp && new_name_temp) {
+      char received_mac[13]; 
+      char new_name[32];     
+
+      strcpy(received_mac, received_mac_temp);
+      strcpy(new_name, new_name_temp);
+
+      uint64_t chipId = ESP.getEfuseMac();
+      char clientId[13];
+      sprintf(clientId, "%04X%08X", (uint16_t)(chipId >> 32), (uint32_t)chipId);
+
+      if (strcmp(received_mac, clientId) == 0) {
+
+        Log::debug(PSTR("Renaming to %s"), new_name);
+        ConfigManager::getInstance().setName(new_name);
+      } else {
+        Log::debug(PSTR("MAC don't match"));
+
+      }
+    } else {
+      Log::debug(PSTR("Invalid values"));
+
+    }
+  } else {
+    Log::debug(PSTR("Invalid format"));
+  }
+    
+}
+
+
+
 
 
 void MQTT_Client::manageSatPosOled(char *payload, size_t payload_len)

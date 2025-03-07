@@ -189,6 +189,11 @@ public:
     strcpy(longitude, buffer);
     this->saveConfig();
   }
+  void setName(const char *buffer)
+  {
+    strncpy(getThingNameParameter()->valueBuffer, buffer, IOTWEBCONF_WORD_LEN);
+    this->saveConfig();
+  }
   const char *getBoardTemplate() { return boardTemplate; }
   void setBoardTemplate(const char *boardTemplateStr)
   {
