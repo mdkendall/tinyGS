@@ -262,7 +262,7 @@ void ConfigManager::handleDashboard()
       timeStr[0] = '\0';
   }
 
-  s += F("</table></div><div class=\"card\"><h3>SAT info</h3><table id=""satinfo"">");
+  s += F("</table></div><div class=\"card\"><h3>Satellite Tracking Data</h3><table id=""satdata"">");
   s += "<tr><td>Listening to </td><td>" + String(status.modeminfo.satellite) + "</td></tr>";
   if (status.modeminfo.tle[0] != 0) {
     s += "<tr><td>Lat / Lon </td><td>" + String(status.tle.dSatLAT)+"º / "+  String(status.tle.dSatLON)+ "º </td></tr>";
