@@ -80,7 +80,7 @@
 #include "time.h"
 
 
-#if  RADIOLIB_VERSION_MAJOR != (0x06) || RADIOLIB_VERSION_MINOR != (0x04) || RADIOLIB_VERSION_PATCH != (0x00) || RADIOLIB_VERSION_EXTRA != (0x00)
+#if  RADIOLIB_VERSION_MAJOR != (0x07) || RADIOLIB_VERSION_MINOR != (0x01) || RADIOLIB_VERSION_PATCH != (0x02) || RADIOLIB_VERSION_EXTRA != (0x00)
 #error "You are not using the correct version of RadioLib please copy TinyGS/lib/RadioLib on Arduino/libraries"
 #endif
 

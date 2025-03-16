@@ -26,7 +26,7 @@
 #include "../Status.h"
 #include "../Mqtt/MQTT_Client.h"
 #include "RadioHal.hpp"
-#include "src/Power/Power.h"
+#include "../Power/Power.h"
 
 extern Status status;
 
