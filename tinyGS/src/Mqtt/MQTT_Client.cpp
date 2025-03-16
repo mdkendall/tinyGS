@@ -250,7 +250,7 @@ void MQTT_Client::sendRx(String packet, bool noisy)
   doc["frequency_error"] = status.lastPacketInfo.frequencyerror;
   doc["unix_GS_time"] = now;
   doc["usec_time"] = (int64_t)tv.tv_usec + tv.tv_sec * 1000000ll;
-  doc["time_offset"] = status.time_offset;
+//  doc["time_offset"] = status.time_offset;
   doc["crc_error"] = status.lastPacketInfo.crc_error;
   doc["data"] = packet.c_str();
   doc["NORAD"] = status.modeminfo.NORAD;
@@ -309,7 +309,7 @@ void MQTT_Client::sendStatus()
   doc["crc_error"] = status.lastPacketInfo.crc_error;
   doc["unix_GS_time"] = now;
   doc["usec_time"] = (int64_t)tv.tv_usec + tv.tv_sec * 1000000ll;
-  doc["time_offset"] = status.time_offset;
+//  doc["time_offset"] = status.time_offset;
 
   char buffer[1024];
   serializeJson(doc, buffer);

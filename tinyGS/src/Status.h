@@ -85,7 +85,7 @@ struct Tle {
   double       dSatAZ   = 0;           // Satellite azimuth
   double       dSatEL   = 0;           // Satellite elevation
   double       tgsALT   = 500;         // station altitude 
-  uint16_t     refresh  = 5000;        // TLE refresh calculation timing       
+  uint16_t     refresh  = 5000;        // TLE refresh calculation timing in ms      
   uint16_t     freqTol  = 300;         // Frequency doppler tolerance to update modem 
   
  };
@@ -102,7 +102,7 @@ struct Status {
   float satPos[2] = {0, 0};
   uint8_t remoteTextFrameLength[4] = {0, 0, 0, 0};
   TextFrame remoteTextFrame[4][15];
-  float time_offset = 0;
+ // float time_offset = 0;
   Tle tle;
  };
 
