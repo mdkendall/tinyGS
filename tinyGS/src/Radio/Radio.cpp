@@ -189,8 +189,9 @@ if (status.modeminfo.tle[0] != 0)
   double       dfreqTX  = status.modeminfo.frequency;     // Nominal uplink frequency
   
   struct tm *timeinfo;
-  time_t currenttime = time(NULL);
+  time_t currenttime = time(NULL) +(status.tle.refresh/2000);       // calculate the TLE for now + the half of the refresh time.
   timeinfo = gmtime(&currenttime);
+
 
   int          iYear    = 1900 + timeinfo->tm_year;   // Set start year
   int          iMonth   = 1+ timeinfo->tm_mon;        // Set start month
@@ -230,7 +231,7 @@ if (status.modeminfo.tle[0] != 0)
   // latlon2xy(ixQTH, iyQTH, dMyLAT, dMyLON, MAP_MAXX, MAP_MAXY);      // Get x/y for the pixel map 
   //Serial.printf("\r\nPrediction for %s at %s (MAP %dx%d: x = %d,y = %d):\r\n\r\n", MySAT.c_ccSatName, MyQTH.c_ccObsName, MAP_MAXX, MAP_MAXY, ixQTH, iyQTH);
   //Log::debug(PSTR( "Prediction for %s at %s"), MySAT.c_ccSatName, MyQTH.c_ccObsName);
-  Log::debug(PSTR("Prediction for (Lat = %.2f%c, Lon = %.2f%c), Alt = %.1f m ASL):"), dMyLAT, (char)39, dMyLON, (char)39, dMyALT);
+  //Log::debug(PSTR("Prediction for (Lat = %.2f%c, Lon = %.2f%c), Alt = %.1f m ASL):"), dMyLAT, (char)39, dMyLON, (char)39, dMyALT);
   MyTime.ascii(acBuffer);             // Get time for prediction as ASCII string
   MySAT.predict(MyTime);              // Predict ISS for specific time
   MySAT.latlon(status.tle.dSatLAT, status.tle.dSatLON);     // Get the rectangular coordinates
@@ -271,7 +272,7 @@ if (status.modeminfo.tle[0] != 0)
 
   //Serial.printf("\r\nSun -> Lat: %.4f Lon: %.4f (MAP %dx%d: x = %d,y = %d) Az: %.2f El: %.2f\r\n\r\n", dSunLAT, dSunLON, MAP_MAXX, MAP_MAXY, ixSUN, iySUN, dSunAZ, dSunEL);
 
-  Log::debug(PSTR("New dopler: %.2f Hz  Old dopler %.2f Hz dif %.2f Hz"),  status.tle.new_freqDoppler, status.tle.freqDoppler, abs( status.tle.new_freqDoppler- status.tle.freqDoppler) );
+  Log::debug(PSTR("Doppler -> New: %.2f Hz Old: %.2f Hz  Dif: %.2f Hz"),  status.tle.new_freqDoppler, status.tle.freqDoppler, abs( status.tle.new_freqDoppler- status.tle.freqDoppler) );
   if (abs( status.tle.new_freqDoppler- status.tle.freqDoppler) >  status.tle.freqTol) {
      status.tle.freqDoppler = status.tle.new_freqDoppler;
      setFrequency();}
@@ -327,9 +328,10 @@ void Radio::startRx()
 void Radio::setFrequency()
 {
   // get current RSSI
+  Log::debug(PSTR("Base: %.4f Mhz Offset: %.1f Hz Doppler: %.1f Hz "),status.modeminfo.frequency, status.modeminfo.freqOffset,status.tle.freqDoppler);
   begin();
   //radioHal->setFrequency( (status.modeminfo.frequency * 1000000 + (status.modeminfo.freqOffset +  status.tle.freqDoppler)) / 1000000);
-  Log::debug(PSTR("Base: %.4f Offset  %.2f Doppler %.2f -> Modem %.4f "),status.modeminfo.frequency, status.modeminfo.freqOffset,status.tle.freqDoppler,(status.modeminfo.frequency * 1000000 + (status.modeminfo.freqOffset +  status.tle.freqDoppler)) / 1000000);
+  //Log::debug(PSTR("Base: %.4f Mhz Offset: %.1f Hz Doppler: %.1f Hz --> Modem: %.4f Mhz"),status.modeminfo.frequency, status.modeminfo.freqOffset,status.tle.freqDoppler,(status.modeminfo.frequency * 1000000 + (status.modeminfo.freqOffset +  status.tle.freqDoppler)) / 1000000);
   //Serial.print("base: ;
   //Serial.println( status.modeminfo.frequency ,4 );
   //Serial.print("offset: ");
@@ -676,9 +678,44 @@ int16_t Radio::remote_freq(char *payload, size_t payload_len)
 
 int16_t Radio::remoteSetFreqOffset(char *payload, size_t payload_len)
 {
+
+  DynamicJsonDocument doc(90);
+  deserializeJson(doc, payload, payload_len);
+
+  if (doc.size()==1) {
+    float frequency_offset = doc[0];
+    Log::console(PSTR("Set Frequency OffSet to %.3f Hz"), frequency_offset);
+    status.modeminfo.freqOffset = frequency_offset ;
+    return 0;
+  }
+
+
+  if (doc.size()==0) {
+     float frequency_offset = _atof(payload, payload_len);
+    Log::console(PSTR("Set Frequency OffSet to %.3f Hz"), frequency_offset);
+    status.modeminfo.freqOffset = frequency_offset ;
+    return 0;
+  } 
+
+
+  if (doc.size()==3) {
+    float frequency_offset = doc[0];
+    status.tle.freqTol =  doc[1];
+    status.tle.refresh =  doc[2];
+    Log::console(PSTR("Set Frequency OffSet to %.3f Hz  Tol: %d Hz Refresh: %d ms"), frequency_offset,status.tle.freqTol,status.tle.refresh);
+    status.modeminfo.freqOffset = frequency_offset ;
+    return 0;
+  }
+
+
+
+
+/*
   float frequency_offset = _atof(payload, payload_len);
   Log::console(PSTR("Set Frequency OffSet to %.3f Hz"), frequency_offset);
   status.modeminfo.freqOffset = frequency_offset ;
+  */
+  
   //status.radio_ready = false;
   //CHECK_ERROR(radioHal->sleep());  // sleep mandatory if FastHop isn't ON.
   //delay(150);
