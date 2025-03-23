@@ -57,7 +57,7 @@ void Log::info(const char* formatP, ...)
 void Log::debug(const char* formatP, ...)
 {
   va_list arg;
-  char buffer[256];
+  char buffer[321];
   va_start(arg, formatP);
   vsnprintf_P(buffer, sizeof(buffer), formatP, arg);
   va_end(arg);

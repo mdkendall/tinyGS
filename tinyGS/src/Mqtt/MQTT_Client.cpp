@@ -22,6 +22,7 @@
 #if ARDUINOJSON_USE_LONG_LONG == 0 && !PLATFORMIO
 #error "Using Arduino IDE is not recommended, please follow this guide https://github.com/G4lile0/tinyGS/wiki/Arduino-IDE or edit /ArduinoJson/src/ArduinoJson/Configuration.hpp and amend to #define ARDUINOJSON_USE_LONG_LONG 1 around line 68"
 #endif
+#include "mbedtls/base64.h"
 #include "../Radio/Radio.h"
 #include "../OTA/OTA.h"
 #include "../Logger/Logger.h"
@@ -220,7 +221,7 @@ void MQTT_Client::sendRx(String packet, bool noisy)
   struct timeval tv;
   gettimeofday(&tv, NULL);
 
-  const size_t capacity = JSON_ARRAY_SIZE(2) + JSON_OBJECT_SIZE(23) + 25;
+  const size_t capacity = JSON_ARRAY_SIZE(2) + JSON_OBJECT_SIZE(23) + 50;
   DynamicJsonDocument doc(capacity);
   JsonArray station_location = doc.createNestedArray("station_location");
   station_location.add(configManager.getLatitude());
@@ -228,8 +229,9 @@ void MQTT_Client::sendRx(String packet, bool noisy)
   doc["mode"] = status.modeminfo.modem_mode;
   doc["frequency"] = status.modeminfo.frequency;
   doc["frequency_offset"] = status.modeminfo.freqOffset;
+  if (status.tle.freqDoppler!=0)  doc["f_doppler"]= status.tle.freqDoppler;
   doc["satellite"] = status.modeminfo.satellite;
-
+  
   if (String(status.modeminfo.modem_mode) == "LoRa")
   {
     doc["sf"] = status.modeminfo.sf;
@@ -248,13 +250,13 @@ void MQTT_Client::sendRx(String packet, bool noisy)
   doc["frequency_error"] = status.lastPacketInfo.frequencyerror;
   doc["unix_GS_time"] = now;
   doc["usec_time"] = (int64_t)tv.tv_usec + tv.tv_sec * 1000000ll;
-  doc["time_offset"] = status.time_offset;
+//  doc["time_offset"] = status.time_offset;
   doc["crc_error"] = status.lastPacketInfo.crc_error;
   doc["data"] = packet.c_str();
   doc["NORAD"] = status.modeminfo.NORAD;
   doc["noisy"] = noisy;
 
-  char buffer[1536];
+  char buffer[1556];
   serializeJson(doc, buffer);
   Log::debug(PSTR("%s"), buffer);
   publish(buildTopic(teleTopic, topicRx).c_str(), buffer, false);
@@ -307,7 +309,7 @@ void MQTT_Client::sendStatus()
   doc["crc_error"] = status.lastPacketInfo.crc_error;
   doc["unix_GS_time"] = now;
   doc["usec_time"] = (int64_t)tv.tv_usec + tv.tv_sec * 1000000ll;
-  doc["time_offset"] = status.time_offset;
+//  doc["time_offset"] = status.time_offset;
 
   char buffer[1024];
   serializeJson(doc, buffer);
@@ -462,7 +464,7 @@ void MQTT_Client::manageMQTTData(char *topic, uint8_t *payload, unsigned int len
     
     if (!isValidFrequency(board.L_radio, doc["freq"]))
     {
-      Log::console(PSTR("ERROR: Wrong frequency. Ignoring."));
+      Log::console(PSTR("ERROR: Invalid frequency. Ignoring."));
       return;
     }
 
@@ -471,7 +473,7 @@ void MQTT_Client::manageMQTTData(char *topic, uint8_t *payload, unsigned int len
 
   if (!strcmp(command, commandBegine))
   {
-    size_t size = JSON_ARRAY_SIZE(10) + 10 * JSON_OBJECT_SIZE(2) + JSON_OBJECT_SIZE(16) + JSON_ARRAY_SIZE(8) + JSON_ARRAY_SIZE(8) + 64;
+    size_t size = JSON_ARRAY_SIZE(10) + 10 * JSON_OBJECT_SIZE(2) + JSON_OBJECT_SIZE(16) + JSON_ARRAY_SIZE(8) + JSON_ARRAY_SIZE(8) + 64 + 128;
     DynamicJsonDocument doc(size);
     DeserializationError error = deserializeJson(doc, payload, length);
 
@@ -488,7 +490,7 @@ void MQTT_Client::manageMQTTData(char *topic, uint8_t *payload, unsigned int len
     
     if (!isValidFrequency(board.L_radio, doc["freq"]))
     {
-      Log::console(PSTR("ERROR: Wrong frequency. Ignoring."));
+      Log::console(PSTR("ERROR: Invalid frequency. Ignoring."));
       return;
     }
    
@@ -551,8 +553,53 @@ void MQTT_Client::manageMQTTData(char *topic, uint8_t *payload, unsigned int len
       else
         status.modeminfo.filter[i] = 0;
     }
+     // sat tle
+    if (doc.containsKey("tle") && doc["tle"].is<const char*>()) {
+    const char* base64Tle = doc["tle"].as<const char*>();
+    size_t inputLen = strlen(base64Tle);
+    size_t outputLen = 0;
+    size_t maxTleSize = 64;
 
-    radio.begin();
+    // Calculate the maximum possible decoded length.
+    // Base64 expands roughly 4 bytes into 3.
+    size_t maxDecodedLength = (inputLen * 3 + 3) / 4;
+
+    if(maxDecodedLength > maxTleSize){
+ //     Serial.println("Error: Decoded TLE too large for buffer.");
+      return;
+    }
+
+    int ret = mbedtls_base64_decode(m.tle, maxTleSize, &outputLen, (const unsigned char*)base64Tle, inputLen);
+
+    
+    if (ret == 0) {
+      // Decoding successful, 'm_tle' now contains the decoded data, and 'outputLen' is the length.
+     // Serial.print("Base64 decoded. Length: ");
+     // Serial.println(outputLen);
+
+      radio.tle();
+
+      //If you want to print the decoded data for debugging purposes:
+    
+      /*
+      Serial.print("Decoded TLE: ");
+      for (size_t i = 0; i < outputLen; i++) {
+        Serial.print(m.tle[i], HEX); // Print in hexadecimal
+        Serial.print(" ");
+      }
+      Serial.println();
+     */
+    } else {
+     // Serial.print("Base64 decode error: ");
+     // Serial.println(ret);
+    }
+  } else {
+   // Serial.println("Error: 'tle' key not found or not a string.");
+    m.tle[0]= 0;
+    status.tle.freqDoppler = 0;
+  }
+
+  radio.begin();
 //    radio.currentRssi();
     result = 0;
   }
@@ -658,11 +705,30 @@ void MQTT_Client::manageMQTTData(char *topic, uint8_t *payload, unsigned int len
     buff[length] = '\0';
     Log::debug(PSTR("%s"), buff);
     ConfigManager::getInstance().setAvancedConfig(buff);
+    result = 0;
   }
+
+  
+  if (!strcmp(command, commandSetPosParameters))
+  {
+   
+    manageSetPosParameters((char *)payload, length);
+    return; // no ack
+
+  }
+
+  if (!strcmp(command, commandSetName))
+  {
+   
+    manageSetName((char *)payload, length);
+    return; // no ack
+  }
+
 
   if (!strcmp(command, commandGetAdvParameters))
   {
     sendAdvParameters();
+    result = 0;
     return;
   }
 
@@ -764,6 +830,100 @@ void MQTT_Client::manageMQTTData(char *topic, uint8_t *payload, unsigned int len
   if (!global)
     publish(buildTopic(statTopic, command).c_str(), (uint8_t *)&result, 2U, false);
 }
+
+
+void MQTT_Client::manageSetPosParameters(char *payload, size_t payload_len)
+{
+
+  DynamicJsonDocument doc(90);
+  deserializeJson(doc, payload, payload_len);
+  if (doc.size()==1) {
+    status.tle.tgsALT = doc[0];
+    Log::debug(PSTR("Alt received= %.1f "),status.tle.tgsALT );
+  }
+
+  if (doc.size()==3) {
+  
+    float receivedLat = doc[0];
+    float receivedLon = doc[1];
+    status.tle.tgsALT = doc[2];
+    //char buff[length + 1];
+    //memcpy(buff, payload, length);
+    //buff[length] = '\0';
+    //Log::debug(PSTR("%s"), buff);
+    float currentLat   = ConfigManager::getInstance().getLatitude();  // Latitude (Breitengrad): N -> +, S -> -
+    float currentLon   = ConfigManager::getInstance().getLongitude(); ;  // Longitude (Längengrad): E -> +, W -> -
+    Log::debug(PSTR("Lat received= %.3f Lat local= %.3f"),receivedLat,currentLat );
+    Log::debug(PSTR("Lon received= %.3f Lon local= %.3f"),receivedLon,currentLon );
+    Log::debug(PSTR("Alt received= %.1f "),status.tle.tgsALT );
+    if (receivedLat != currentLat) {
+          Log::debug(PSTR("Lat received= %.3f Lat local= %.3f"),receivedLat,currentLat );
+          char buff[10];
+          sprintf(buff, "%.3f", receivedLat);
+          Log::debug(PSTR("%s"), buff);
+          ConfigManager::getInstance().setLat(buff);
+        }
+
+    if (receivedLon != currentLon) {
+          Log::debug(PSTR("Lat received= %.3f Lat local= %.3f"),receivedLon,currentLon );
+          char buff[10];
+          sprintf(buff, "%.3f", receivedLon);
+          Log::debug(PSTR("%s"), buff);
+          ConfigManager::getInstance().setLon(buff);
+        } 
+  }
+
+}
+
+
+
+void MQTT_Client::manageSetName(char *payload, size_t payload_len)
+{
+  DynamicJsonDocument doc(128);
+  DeserializationError error = deserializeJson(doc, payload, payload_len);
+
+  if (error) {
+    Serial.print(F("deserializeJson() failed: "));
+    Serial.println(error.c_str());
+    return;
+  }
+
+  if (doc.is<JsonArray>() && doc.size() == 2) {
+    const char* received_mac_temp = doc[0].as<const char*>();
+    const char* new_name_temp = doc[1].as<const char*>();
+
+    if (received_mac_temp && new_name_temp) {
+      char received_mac[13]; 
+      char new_name[32];     
+
+      strcpy(received_mac, received_mac_temp);
+      strcpy(new_name, new_name_temp);
+
+      uint64_t chipId = ESP.getEfuseMac();
+      char clientId[13];
+      sprintf(clientId, "%04X%08X", (uint16_t)(chipId >> 32), (uint32_t)chipId);
+
+      if (strcmp(received_mac, clientId) == 0) {
+
+        Log::debug(PSTR("Renaming to %s"), new_name);
+        ConfigManager::getInstance().setName(new_name);
+      } else {
+        Log::debug(PSTR("MAC don't match"));
+
+      }
+    } else {
+      Log::debug(PSTR("Invalid values"));
+
+    }
+  } else {
+    Log::debug(PSTR("Invalid format"));
+  }
+    
+}
+
+
+
+
 
 void MQTT_Client::manageSatPosOled(char *payload, size_t payload_len)
 {

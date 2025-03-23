@@ -82,7 +82,7 @@
 #include "src/Improv/tinygs_improv.h"
 
 
-#if  RADIOLIB_VERSION_MAJOR != (0x06) || RADIOLIB_VERSION_MINOR != (0x04) || RADIOLIB_VERSION_PATCH != (0x00) || RADIOLIB_VERSION_EXTRA != (0x00)
+#if  RADIOLIB_VERSION_MAJOR != (0x07) || RADIOLIB_VERSION_MINOR != (0x01) || RADIOLIB_VERSION_PATCH != (0x02) || RADIOLIB_VERSION_EXTRA != (0x00)
 #error "You are not using the correct version of RadioLib please copy TinyGS/lib/RadioLib on Arduino/libraries"
 #endif
 
@@ -257,6 +257,7 @@ bool mqttAutoconf () {
     }
     return false;
 }
+unsigned long lastTleRefresh = 0;
 
 void loop() {  
     configManager.doLoop ();
@@ -309,14 +310,24 @@ void loop() {
 
   mqtt.loop();
   OTA::loop();
+
   if (configManager.getOledBright () != 0) displayUpdate ();
 
-  if (configManager.askedWebLogin () && mqtt.connected())
+  if (configManager.askedWebLogin () && mqtt.connected ())
   {
       Log::debug (PSTR ("Getting weblogin in loop"));
       mqtt.sendWeblogin ();
   }
+  
+  // Update TLE
+  unsigned long currentTime = millis();
+  if (currentTime - lastTleRefresh >= status.tle.refresh) {
+      lastTleRefresh = currentTime;
+      radio.tle();
+  }
+
 }
+
 
 void setupNTP()
 {

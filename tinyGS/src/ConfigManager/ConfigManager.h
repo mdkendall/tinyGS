@@ -49,6 +49,7 @@ constexpr auto CB_SELECTED_STR = "selected";
 
 constexpr auto ROOT_URL = "/";
 constexpr auto FAVICON_URL = "/favicon.png";
+constexpr auto LOGO_URL = "/logo.png";
 constexpr auto CONFIG_URL = "/config";
 constexpr auto DASHBOARD_URL = "/dashboard";
 constexpr auto UPDATE_URL = "/firmware";
@@ -198,7 +199,22 @@ public:
   //void setTZ (const char* tz);
   iotwebconf2::Parameter* getTZParameter () { return &tzParam; }
   
-
+  void setLat(const char *buffer)
+  {
+    strcpy(latitude, buffer);
+    this->saveConfig();
+  }
+  void setLon(const char *buffer)
+  {
+    strcpy(longitude, buffer);
+    this->saveConfig();
+  }
+  void setName(const char *buffer)
+  {
+    strncpy(getThingNameParameter()->valueBuffer, buffer, IOTWEBCONF_WORD_LEN);
+    this->saveConfig();
+  }
+  
   void setBoardTemplate (const char* boardTemplateStr)
   {
     strcpy(boardTemplate, boardTemplateStr);
@@ -246,9 +262,10 @@ private:
       return String(FPSTR(ADVANCED_CONFIG_SCRIPT)) +
              iotwebconf2::HtmlFormatProvider::getScriptInner();
     }
+
     String getBodyInner() override
     {
-      return String(FPSTR(LOGO)) +
+      return "<div><img src=\"" + String(LOGO_URL) + "\"></div>" +
              iotwebconf2::HtmlFormatProvider::getBodyInner();
     }
 
@@ -263,7 +280,7 @@ private:
 
   ConfigManager();
   void handleRoot();
-  void handleFavicon();
+  void handleImage(const char *data, size_t size);
   void handleDashboard();
   void handleRefreshConsole();
   void handleRefreshWorldmap();
@@ -291,7 +308,6 @@ private:
   AdvancedConfig advancedConf;
   char savedThingName[IOTWEBCONF_WORD_LEN] = "";
   bool remoteSave = false;
-
   char latitude[COORDINATE_LENGTH] = "";
   char longitude[COORDINATE_LENGTH] = "";
   char tz[TZ_LENGTH] = "";

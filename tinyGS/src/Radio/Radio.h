@@ -26,10 +26,9 @@
 #include "../Status.h"
 #include "../Mqtt/MQTT_Client.h"
 #include "RadioHal.hpp"
-#include "src/Power/Power.h"
+#include "../Power/Power.h"
 
 extern Status status;
-
 
 enum RadioModelNum {
   RADIO_SX1278 = 1,
@@ -49,9 +48,11 @@ public:
 
   void init();
   int16_t begin();
+  void setFrequency();
   void enableInterrupt();
   void disableInterrupt();
   void startRx();
+  void tle();
   void currentRssi();
   int16_t moduleSleep();
   uint8_t listen();
