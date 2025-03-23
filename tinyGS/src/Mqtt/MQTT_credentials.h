@@ -4,8 +4,6 @@
 #include <ArduinoJson.h>
 #include <WiFi.h>
 
-#define LOG_TAG "MQTT_CRED"
-
 #include "../ConfigManager/ConfigManager.h"
 #include "../Status.h"
 
@@ -20,6 +18,8 @@ private:
     static const size_t OTP_LENGTH = 7;
     char otpCode[OTP_LENGTH];
     String url;
+    const char* LOG_TAG = "MQTT_CRED";
+
 };
 
 extern MQTTCredentials mqttCredentials;

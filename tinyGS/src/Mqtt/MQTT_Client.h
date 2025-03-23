@@ -21,7 +21,6 @@
 #define MQTT_CLIENT_H
 
 #define SECURE_MQTT // Comment this line if you are not using MQTT over SSL
-#define LOG_TAG "MQTT"
 
 #include "../ConfigManager/ConfigManager.h"
 #include "../Status.h"
@@ -64,7 +63,8 @@ protected:
   void reconnect();
 
 private:
-  MQTT_Client();
+  const char* LOG_TAG = "MQTT";
+  MQTT_Client ();
   String buildTopic(const char * baseTopic, const char * cmnd);
   void subscribeToAll();
   void manageSatPosOled(char* payload, size_t payload_len);
