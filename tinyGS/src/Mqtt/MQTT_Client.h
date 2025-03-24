@@ -108,23 +108,10 @@ private:
   const char* commandSatPos PROGMEM= "sat_pos_oled";
   const char* commandReset PROGMEM= "reset";
   const char* commandFreq PROGMEM= "freq";
-  const char* commandBw PROGMEM= "bw";
-  const char* commandSf PROGMEM= "sf";
-  const char* commandCr PROGMEM= "cr";
-  const char* commandCrc PROGMEM= "crc";
-  const char* commandLsw PROGMEM= "lsw";
-  const char* commandFldro PROGMEM= "fldro";
-  const char* commandAldro PROGMEM= "aldro";
-  const char* commandPl PROGMEM= "pl";
-  const char* commandBegine PROGMEM= "begine";
+   const char* commandBegine PROGMEM= "begine";
   const char* commandBeginp PROGMEM= "beginp";
   const char* commandBeginLora PROGMEM= "begin_lora";
   const char* commandBeginFSK PROGMEM= "begin_fsk";
-  const char* commandBr PROGMEM= "br";
-  const char* commandFd PROGMEM= "Fd";
-  const char* commandFbw PROGMEM= "fbw";
-  const char* commandFsw PROGMEM= "fsw";
-  const char* commandFook PROGMEM= "fok";
   const char* commandFrame PROGMEM= "frame";
   const char* commandSat PROGMEM= "sat";
   const char* commandStatus PROGMEM= "status";
@@ -139,10 +126,7 @@ private:
   const char* commandWeblogin PROGMEM = "weblogin";
   const char* commandSetPosParameters PROGMEM= "set_pos_prm"; 
   const char* commandSetName PROGMEM= "set_name"; 
-    // GOD MODE  With great power comes great responsibility!
-  const char* commandSPIsetRegValue PROGMEM= "SPIsetRegValue";
-  const char* commandSPIwriteRegister PROGMEM= "SPIwriteRegister";
-  const char* commandSPIreadRegister PROGMEM= "SPIreadRegister";
+
 };
 
 #endif

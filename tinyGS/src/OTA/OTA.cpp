@@ -33,7 +33,9 @@ void OTA::update()
   if (usingNewCert)
     client.setCACert(newRoot_CA);
   else
-    client.setCACert(DSTroot_CA);
+//    client.setCACert(DSTroot_CA);
+client.setCACert(newRoot_CA);
+  
 #else
   WiFiClient client;
 #endif

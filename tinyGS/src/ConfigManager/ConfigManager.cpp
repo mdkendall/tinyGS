@@ -86,7 +86,7 @@ ConfigManager::ConfigManager()
 {
   server.on(ROOT_URL, [this] { handleRoot(); });
   server.on(LOGO_URL, [this] { handleImage(LOGO_PNG, sizeof(LOGO_PNG)); });
-  server.on(FAVICON_URL, [this] { handleImage(FAVICON_PNG, sizeof(FAVICON_PNG)); });
+  //server.on(FAVICON_URL, [this] { handleImage(FAVICON_PNG, sizeof(FAVICON_PNG)); });
   server.on(CONFIG_URL, [this] { handleConfig(); });
   server.on(DASHBOARD_URL, [this] { handleDashboard(); });
   server.on(RESTART_URL, [this] { handleRestart(); });
@@ -140,7 +140,7 @@ void ConfigManager::handleRoot()
   }
 
   String s = String(FPSTR(IOTWEBCONF_HTML_HEAD));
-  s += "<link rel=\"icon\" href=\"" + String(FAVICON_URL) + "\"/>";
+ // s += "<link rel=\"icon\" href=\"" + String(FAVICON_URL) + "\"/>";
   s += "<style>" + String(FPSTR(IOTWEBCONF_HTML_STYLE_INNER)) + "</style>";
   s += FPSTR(IOTWEBCONF_HTML_HEAD_END);
   s += FPSTR(IOTWEBCONF_HTML_BODY_INNER);
