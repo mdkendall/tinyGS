@@ -86,13 +86,13 @@ struct Tle {
   double       dSatEL   = 0;           // Satellite elevation
   double       tgsALT   = 500;         // station altitude 
   uint16_t     refresh  = 6000;        // TLE refresh calculation timing in ms      
-  uint16_t     freqTol  = 300;         // Frequency doppler tolerance to update modem 
+  uint16_t     freqTol  = 500;         // Frequency doppler tolerance to update modem 
   
  };
 
  
 struct Status {
-  const uint32_t version = 2503163; // version: year month day release
+  const uint32_t version = 2503302; // version: year month day release
   const char* git_version = GIT_VERSION;
   bool mqtt_connected = false;
   bool radio_ready = false;
