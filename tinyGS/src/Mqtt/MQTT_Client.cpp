@@ -33,7 +33,8 @@ MQTT_Client::MQTT_Client()
     : PubSubClient(espClient)
 {
 #ifdef SECURE_MQTT
-  espClient.setCACert(usingNewCert ? newRoot_CA : DSTroot_CA);
+//  espClient.setCACert(usingNewCert ? newRoot_CA : DSTroot_CA);
+espClient.setCACert(newRoot_CA);
 #endif
   randomTime = random(randomTimeMax - randomTimeMin) + randomTimeMin;
 }
@@ -140,11 +141,11 @@ void MQTT_Client::reconnect()
         if (connectionAtempts > 3)
         {
 #ifdef SECURE_MQTT
-          if (usingNewCert)
-            espClient.setCACert(DSTroot_CA);
-          else
+//          if (usingNewCert)
+//            espClient.setCACert(DSTroot_CA);
+//          else
             espClient.setCACert(newRoot_CA);
-          usingNewCert = !usingNewCert;
+//          usingNewCert = !usingNewCert;
 #endif
         }
         break;
