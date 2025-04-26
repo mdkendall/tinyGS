@@ -319,3 +319,40 @@ int BitCode::nrz2ax25(uint8_t *entrada, size_t sizeEntrada, uint8_t *ax25bin, si
       return 1;
 	  }
 }
+
+
+int read_bit (uint32_t dato, int posicion){
+  int test=1;
+  int resultado=0;
+  test <<= (posicion-1);
+  resultado=dato & test;
+  if (resultado==0){return 0;}else{return 1;}
+}
+
+/** The posicion is numbered from LSB to MSB beginning in "1".
+    That is to say, the position 4th is 00001000
+*/
+void write_bit(uint32_t *byte, int posicion, int dato){
+  int byte_aux = 1;
+  //Al rotar se introducen ceros por la derecha.
+  byte_aux = byte_aux << (posicion-1); 
+  //Para setear a cero, hacemos una mascara complementado byte_aux para convetir los ceros en unos,
+  //y el uno del bit a setear en cero. Al hacer el AND bit a bit, dejaremos lo demás bits como estan
+  //y el bit con la posición del bit a cero, quedará a cero.
+  if (dato==0){*byte = *byte & ~byte_aux;} 
+  if (dato==1){*byte = *byte | byte_aux;}
+}
+
+int BitCode::pn9(uint8_t *entrada, size_t sizeEntrada, uint8_t *salida){
+    uint32_t pn9 =0x000001FF;
+    uint32_t mask=0x000001FF;
+    for (int b=0;b<sizeEntrada;b++){
+            salida[b]=entrada[b]^pn9;
+	    for (int k=0;k<8;k++){ 
+        write_bit(&pn9,10,(read_bit(pn9,1)^read_bit(pn9,6)));
+		    pn9 >>= 1;
+        pn9 &= mask;
+	    }//Fin Efectua 8 desplazamientos
+    }
+    return 0;
+  }
