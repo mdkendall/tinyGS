@@ -28,8 +28,10 @@ struct PacketInfo {
   String time = "Waiting";
   float rssi = 0;
   float snr = 0;
-  float frequencyerror = 0;    // Hz 
-  bool crc_error = false;
+  float frequencyerror = 0;       // Hz 
+  bool  crc_error = false;
+  float freqDoppler = 0;          // Hz
+
 };
 
 struct ModemInfo {
@@ -92,13 +94,14 @@ struct Tle {
 
  
 struct Status {
-  const uint32_t version = 2504251; // version: year month day release
+  const uint32_t version = 2504261; // version: year month day release
   const char* git_version = GIT_VERSION;
   bool mqtt_connected = false;
   bool radio_ready = false;
   int16_t radio_error = 0;
   PacketInfo lastPacketInfo;
   ModemInfo modeminfo;
+  ModemInfo modeminfolastpckt;
   float satPos[2] = {0, 0};
   uint8_t remoteTextFrameLength[4] = {0, 0, 0, 0};
   TextFrame remoteTextFrame[4][15];

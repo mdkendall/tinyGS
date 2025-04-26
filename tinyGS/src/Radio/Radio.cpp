@@ -420,6 +420,9 @@ uint8_t Radio::listen()
     return 4;
   }
 
+  status.modeminfolastpckt = status.modeminfo;
+  if (status.tle.freqDoppler!=0)  status.lastPacketInfo.freqDoppler = status.tle.freqDoppler;
+
   struct tm *timeinfo;
   time_t currenttime = time(NULL);
   if (currenttime < 0)

@@ -237,23 +237,23 @@ void MQTT_Client::sendRx(String packet, bool noisy)
   JsonArray station_location = doc.createNestedArray("station_location");
   station_location.add(configManager.getLatitude());
   station_location.add(configManager.getLongitude());
-  doc["mode"] = status.modeminfo.modem_mode;
-  doc["frequency"] = status.modeminfo.frequency;
-  doc["frequency_offset"] = status.modeminfo.freqOffset;
-  if (status.tle.freqDoppler!=0)  doc["f_doppler"]= status.tle.freqDoppler;
-  doc["satellite"] = status.modeminfo.satellite;
+  doc["mode"] = status.modeminfolastpckt.modem_mode;
+  doc["frequency"] = status.modeminfolastpckt.frequency;
+  doc["frequency_offset"] = status.modeminfolastpckt.freqOffset;
+  if (status.lastPacketInfo.freqDoppler!=0)  doc["f_doppler"]= status.lastPacketInfo.freqDoppler;
+  doc["satellite"] = status.modeminfolastpckt.satellite;
   
-  if (String(status.modeminfo.modem_mode) == "LoRa")
+  if (String(status.modeminfolastpckt.modem_mode) == "LoRa")
   {
-    doc["sf"] = status.modeminfo.sf;
-    doc["cr"] = status.modeminfo.cr;
-    doc["bw"] = status.modeminfo.bw;
+    doc["sf"] = status.modeminfolastpckt.sf;
+    doc["cr"] = status.modeminfolastpckt.cr;
+    doc["bw"] = status.modeminfolastpckt.bw;
   }
   else
   {
-    doc["bitrate"] = status.modeminfo.bitrate;
-    doc["freqdev"] = status.modeminfo.freqDev;
-    doc["rxBw"] = status.modeminfo.bw;
+    doc["bitrate"] = status.modeminfolastpckt.bitrate;
+    doc["freqdev"] = status.modeminfolastpckt.freqDev;
+    doc["rxBw"] = status.modeminfolastpckt.bw;
   }
 
   doc["rssi"] = status.lastPacketInfo.rssi;
@@ -264,7 +264,7 @@ void MQTT_Client::sendRx(String packet, bool noisy)
 //  doc["time_offset"] = status.time_offset;
   doc["crc_error"] = status.lastPacketInfo.crc_error;
   doc["data"] = packet.c_str();
-  doc["NORAD"] = status.modeminfo.NORAD;
+  doc["NORAD"] = status.modeminfolastpckt.NORAD;
   doc["noisy"] = noisy;
 
   char buffer[1556];
