@@ -321,6 +321,31 @@ int BitCode::nrz2ax25(uint8_t *entrada, size_t sizeEntrada, uint8_t *ax25bin, si
 }
 
 
+/*  
+    ////////////////////////////////////////////////////////////////
+    About bit position convention:
+    ------------------------------
+    The posicion for reading or writing a bit is numbered from 
+    LSB to MSB beginning in "1" That is to say, the position 4th is:
+    
+    00001000
+        ^   
+
+    About shifting bits:
+    --------------------
+    Shift bits to the left will introduce zeros by the right.
+    e.g. 00000001 << 3 = 00001000
+
+    For setting a bit to zero:
+    --------------------------
+    For bit selection, a one in byte_aux is rotated to the desire 
+    position. Then a mask is done complementing byte_aux to set the 
+    zeros in ones and viceversa. When applying the AND operation, 
+    everything will remain equal, except the bit in the position of 
+    bit zero, which will be set to zero.
+    ////////////////////////////////////////////////////////////////
+*/
+
 int read_bit (uint32_t dato, int posicion){
   int test=1;
   int resultado=0;
@@ -329,16 +354,9 @@ int read_bit (uint32_t dato, int posicion){
   if (resultado==0){return 0;}else{return 1;}
 }
 
-/** The posicion is numbered from LSB to MSB beginning in "1".
-    That is to say, the position 4th is 00001000
-*/
 void write_bit(uint32_t *byte, int posicion, int dato){
   int byte_aux = 1;
-  //Al rotar se introducen ceros por la derecha.
   byte_aux = byte_aux << (posicion-1); 
-  //Para setear a cero, hacemos una mascara complementado byte_aux para convetir los ceros en unos,
-  //y el uno del bit a setear en cero. Al hacer el AND bit a bit, dejaremos lo demás bits como estan
-  //y el bit con la posición del bit a cero, quedará a cero.
   if (dato==0){*byte = *byte & ~byte_aux;} 
   if (dato==1){*byte = *byte | byte_aux;}
 }
@@ -352,7 +370,7 @@ int BitCode::pn9(uint8_t *entrada, size_t sizeEntrada, uint8_t *salida){
         write_bit(&pn9,10,(read_bit(pn9,1)^read_bit(pn9,6)));
 		    pn9 >>= 1;
         pn9 &= mask;
-	    }//Fin Efectua 8 desplazamientos
+	    }
     }
     return 0;
   }
