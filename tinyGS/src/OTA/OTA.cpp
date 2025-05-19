@@ -30,12 +30,10 @@ void OTA::update()
 {
 #ifdef SECURE_OTA
   WiFiClientSecure client;
-  if (usingNewCert)
+//  if (usingNewCert)
     client.setCACert(newRoot_CA);
-  else
+//  else
 //    client.setCACert(DSTroot_CA);
-client.setCACert(newRoot_CA);
-  
 #else
   WiFiClient client;
 #endif

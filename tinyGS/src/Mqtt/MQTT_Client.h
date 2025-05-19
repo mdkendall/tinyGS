@@ -77,7 +77,7 @@ private:
 
   int  voltage();
   
-  bool usingNewCert = true;
+  //bool usingNewCert = true;
   unsigned long lastPing = 0;
   unsigned long lastConnectionAtempt = 0;
   uint8_t connectionAtempts = 0;

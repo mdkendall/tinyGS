@@ -26,13 +26,15 @@
 #include "../Radio/Radio.h"
 #include "../OTA/OTA.h"
 #include "../Logger/Logger.h"
+#include <esp_ota_ops.h>
+
 
 MQTT_Client::MQTT_Client()
     : PubSubClient(espClient)
 {
 #ifdef SECURE_MQTT
- // espClient.setCACert(usingNewCert ? newRoot_CA : DSTroot_CA);
-  espClient.setCACert(usingNewCert ? newRoot_CA : newRoot_CA);
+//  espClient.setCACert(usingNewCert ? newRoot_CA : DSTroot_CA);
+espClient.setCACert(newRoot_CA);
 #endif
   randomTime = random(randomTimeMax - randomTimeMin) + randomTimeMin;
 }
@@ -139,12 +141,11 @@ void MQTT_Client::reconnect()
         if (connectionAtempts > 3)
         {
 #ifdef SECURE_MQTT
-          if (usingNewCert)
-    //        espClient.setCACert(DSTroot_CA);
-              espClient.setCACert(newRoot_CA);
-          else
+//          if (usingNewCert)
+//            espClient.setCACert(DSTroot_CA);
+//          else
             espClient.setCACert(newRoot_CA);
-          usingNewCert = !usingNewCert;
+//          usingNewCert = !usingNewCert;
 #endif
         }
         break;
@@ -186,7 +187,7 @@ void MQTT_Client::sendWelcome()
   char clientId[13];
   sprintf(clientId, "%04X%08X", (uint16_t)(chipId >> 32), (uint32_t)chipId);
 
-  const size_t capacity = JSON_ARRAY_SIZE(2) + JSON_OBJECT_SIZE(17) + 22 + 20 + 20 + 20 + 40+ 20;
+  const size_t capacity = JSON_ARRAY_SIZE(2) + JSON_OBJECT_SIZE(17) + 22 + 20 + 20 + 20 + 40+ 20+40;
   DynamicJsonDocument doc(capacity);
   JsonArray station_location = doc.createNestedArray("station_location");
   station_location.add(configManager.getLatitude());
@@ -209,6 +210,14 @@ void MQTT_Client::sendWelcome()
   doc["seconds"] = millis()/1000;
   doc["Vbat"] = voltage();
   doc["chip"] = ESP.getChipModel();
+  doc["slot"] = esp_ota_get_running_partition ()->label;
+  doc["pSize"] = esp_ota_get_running_partition ()->size;
+  doc["idfv"] = esp_get_idf_version();
+
+  Log::debug(PSTR("Running on %s"),  esp_ota_get_running_partition ()->label);
+  Log::debug(PSTR("Partition size: %d bytes"),esp_ota_get_running_partition ()->size);
+  Log::debug(PSTR("ESP-IDF version: %s"), esp_get_idf_version());
+
 
   char buffer[1048];
   serializeJson(doc, buffer);
@@ -228,23 +237,23 @@ void MQTT_Client::sendRx(String packet, bool noisy)
   JsonArray station_location = doc.createNestedArray("station_location");
   station_location.add(configManager.getLatitude());
   station_location.add(configManager.getLongitude());
-  doc["mode"] = status.modeminfo.modem_mode;
-  doc["frequency"] = status.modeminfo.frequency;
-  doc["frequency_offset"] = status.modeminfo.freqOffset;
-  if (status.tle.freqDoppler!=0)  doc["f_doppler"]= status.tle.freqDoppler;
-  doc["satellite"] = status.modeminfo.satellite;
+  doc["mode"] = status.modeminfolastpckt.modem_mode;
+  doc["frequency"] = status.modeminfolastpckt.frequency;
+  doc["frequency_offset"] = status.modeminfolastpckt.freqOffset;
+  if (status.lastPacketInfo.freqDoppler!=0)  doc["f_doppler"]= status.lastPacketInfo.freqDoppler;
+  doc["satellite"] = status.modeminfolastpckt.satellite;
   
-  if (String(status.modeminfo.modem_mode) == "LoRa")
+  if (String(status.modeminfolastpckt.modem_mode) == "LoRa")
   {
-    doc["sf"] = status.modeminfo.sf;
-    doc["cr"] = status.modeminfo.cr;
-    doc["bw"] = status.modeminfo.bw;
+    doc["sf"] = status.modeminfolastpckt.sf;
+    doc["cr"] = status.modeminfolastpckt.cr;
+    doc["bw"] = status.modeminfolastpckt.bw;
   }
   else
   {
-    doc["bitrate"] = status.modeminfo.bitrate;
-    doc["freqdev"] = status.modeminfo.freqDev;
-    doc["rxBw"] = status.modeminfo.bw;
+    doc["bitrate"] = status.modeminfolastpckt.bitrate;
+    doc["freqdev"] = status.modeminfolastpckt.freqDev;
+    doc["rxBw"] = status.modeminfolastpckt.bw;
   }
 
   doc["rssi"] = status.lastPacketInfo.rssi;
@@ -255,7 +264,7 @@ void MQTT_Client::sendRx(String packet, bool noisy)
 //  doc["time_offset"] = status.time_offset;
   doc["crc_error"] = status.lastPacketInfo.crc_error;
   doc["data"] = packet.c_str();
-  doc["NORAD"] = status.modeminfo.NORAD;
+  doc["NORAD"] = status.modeminfolastpckt.NORAD;
   doc["noisy"] = noisy;
 
   char buffer[1556];

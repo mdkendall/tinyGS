@@ -420,6 +420,9 @@ uint8_t Radio::listen()
     return 4;
   }
 
+  status.modeminfolastpckt = status.modeminfo;
+  if (status.tle.freqDoppler!=0)  status.lastPacketInfo.freqDoppler = status.tle.freqDoppler;
+
   struct tm *timeinfo;
   time_t currenttime = time(NULL);
   if (currenttime < 0)
@@ -509,7 +512,15 @@ uint8_t Radio::listen()
         respFrame=ax25bin;
         respLen=sizeAx25bin;
       }
-            
+
+      if (status.modeminfo.framing==2){ //framing=2 -> PN9(Fixed 8 bits shift) de-scrambler
+        uint8_t *salida;
+        size_t sizeSalida=0;              
+        salida=new uint8_t[respLen];
+        BitCode::pn9(respFrame,respLen,salida);
+        respFrame=salida;
+      }
+
       if (frame_error==0 && status.modeminfo.crc_by_sw){
         size_t newsize=respLen-status.modeminfo.crc_nbytes;
         RadioLibCRCInstance.size = status.modeminfo.crc_nbytes*8;
