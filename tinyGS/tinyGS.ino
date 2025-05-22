@@ -236,12 +236,21 @@ bool mqttAutoconf () {
                 strncpy (configManager.getApPasswordParameter ()->valueBuffer, adminPw, configManager.getApPasswordParameter ()->getLength ());
             }
             if (doc["config"].containsKey ("latitude") && doc["config"].containsKey ("longitude")) {
-                const char* latitude = doc["config"]["latitude"];
-                const char* longitude = doc["config"]["longitude"];
+                const char* latitude = doc["config"]["latitude"].as<const char*>();
+                const char* longitude = doc["config"]["longitude"].as<const char*> ();
                 Log::console ("Latitude: %s", latitude);
-                Log::console ("Longitude: %s", longitude);
-                strncpy (configManager.getLatitudeParameter ()->valueBuffer, latitude, configManager.getLatitudeParameter ()->getLength ());
-                strncpy (configManager.getLongitudeParameter ()->valueBuffer, longitude, configManager.getLongitudeParameter ()->getLength ());
+                Log::console("Longitude: %s", longitude);
+
+                auto latParam = configManager.getLatitudeParameter();
+                auto lonParam = configManager.getLongitudeParameter();
+
+                if (latParam && lonParam && latitude && longitude) {
+                    // Use snprintf for safety and null-termination
+                    snprintf(latParam->valueBuffer, latParam->getLength(), "%s", latitude);
+                    snprintf(lonParam->valueBuffer, lonParam->getLength(), "%s", longitude);
+                } else {
+                    Log::console("Error: Invalid latitude/longitude or parameter pointer");
+                }
             }
 
             if (doc["config"].containsKey ("tz")) {
