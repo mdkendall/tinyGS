@@ -16,7 +16,7 @@ const char* API_URL = "https://api.tinygs.com/credentials?otp=";
 MQTTCredentials mqttCredentials;
 
 void MQTTCredentials::generateOTPCode () {
-    snprintf (otpCode, OTP_LENGTH, "%06ld", random (0, 1000000));
+    snprintf (otpCode, OTP_LENGTH, "%06ld", random (100000, 1000000));
     Log::console ("Generated OTP: %s", otpCode);
     url = String (API_URL) + otpCode;
 }

@@ -164,8 +164,11 @@ void setup()
   displayInit();
   displayShowInitialCredits();
   configManager.delay(1000);
-  mqtt.begin();
-  mqttCredentials.generateOTPCode ();
+  mqtt.begin ();
+
+  if ((configManager.getMqttServer ()[0] == '\0') || (configManager.getMqttUser ()[0] == '\0') || (configManager.getMqttPass ()[0] == '\0')) {
+      mqttCredentials.generateOTPCode ();
+  }
 
   if (configManager.getOledBright() == 0)
   {
@@ -289,8 +292,8 @@ void loop() {
 
   if (configManager.getState () < IOTWEBCONF_STATE_AP_MODE) // not ready or not configured
   {
-    displayShowApMode();
-    return;
+      displayShowApMode ();
+      return;
   }
 
   if ((configManager.getMqttServer ()[0] == '\0') || (configManager.getMqttUser ()[0] == '\0') || (configManager.getMqttPass ()[0] == '\0')) {
