@@ -224,7 +224,7 @@ void MQTT_Client::sendWelcome()
   publish(buildTopic(teleTopic, topicWelcome).c_str(), buffer, false);
 }
 
-void MQTT_Client::sendRx(String packet, bool noisy)
+void MQTT_Client::sendRx(String packet, bool noisy, String raw_packet)
 {
   ConfigManager &configManager = ConfigManager::getInstance();
   time_t now;
@@ -232,7 +232,7 @@ void MQTT_Client::sendRx(String packet, bool noisy)
   struct timeval tv;
   gettimeofday(&tv, NULL);
 
-  const size_t capacity = JSON_ARRAY_SIZE(2) + JSON_OBJECT_SIZE(23) + 50;
+  const size_t capacity = JSON_ARRAY_SIZE(2) + JSON_OBJECT_SIZE(23) + 50 + 128;
   DynamicJsonDocument doc(capacity);
   JsonArray station_location = doc.createNestedArray("station_location");
   station_location.add(configManager.getLatitude());
@@ -241,6 +241,7 @@ void MQTT_Client::sendRx(String packet, bool noisy)
   doc["frequency"] = status.modeminfolastpckt.frequency;
   doc["frequency_offset"] = status.modeminfolastpckt.freqOffset;
   if (status.lastPacketInfo.freqDoppler!=0)  doc["f_doppler"]= status.lastPacketInfo.freqDoppler;
+ 
   doc["satellite"] = status.modeminfolastpckt.satellite;
   
   if (String(status.modeminfolastpckt.modem_mode) == "LoRa")
@@ -254,6 +255,7 @@ void MQTT_Client::sendRx(String packet, bool noisy)
     doc["bitrate"] = status.modeminfolastpckt.bitrate;
     doc["freqdev"] = status.modeminfolastpckt.freqDev;
     doc["rxBw"] = status.modeminfolastpckt.bw;
+    doc["data"] = raw_packet.c_str();
   }
 
   doc["rssi"] = status.lastPacketInfo.rssi;
