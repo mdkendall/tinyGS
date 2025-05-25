@@ -255,7 +255,7 @@ void MQTT_Client::sendRx(String packet, bool noisy, String raw_packet)
     doc["bitrate"] = status.modeminfolastpckt.bitrate;
     doc["freqdev"] = status.modeminfolastpckt.freqDev;
     doc["rxBw"] = status.modeminfolastpckt.bw;
-    doc["data"] = raw_packet.c_str();
+    doc["data_raw"] = raw_packet.c_str();
   }
 
   doc["rssi"] = status.lastPacketInfo.rssi;
