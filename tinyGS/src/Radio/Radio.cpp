@@ -511,10 +511,12 @@ uint8_t Radio::listen()
         size_t sizeAx25bin=0;
         ax25bin=new uint8_t[buffSize_pck];
         frame_error=BitCode::nrz2ax25(respFrame_fsk,buffSize_pck,ax25bin,&sizeAx25bin);
+        delete[] respFrame_fsk; // Clean up respFrame_fsk
         if (frame_error!=0){
           Log::console(PSTR("Frame error!"));
         }
         //RAW packet is replaced by the processed packet.
+        delete[] respFrame; // Clean up original respFrame before reassignment
         respFrame=ax25bin;
         respLen=sizeAx25bin;
       }
@@ -557,6 +559,7 @@ uint8_t Radio::listen()
         Log::log_packet(respFrame,respLen);
         packet_logged=true;
         if (fcs!=crcfield){
+            status.lastPacketInfo.crc_error = true;
             Log::console(PSTR("Error_CRC"));
             char *cad=new char[10];
             respLen=10;
@@ -564,6 +567,7 @@ uint8_t Radio::listen()
             for (int i=0;i<10;i++){
               respFrame[i]=(char)cad[i];
             }
+            delete[] cad; // Clean up cad
           }          
         }
       }
@@ -598,9 +602,9 @@ uint8_t Radio::listen()
       }
     }
 
-    status.lastPacketInfo.crc_error = false;
+//    status.lastPacketInfo.crc_error = false;
     String encoded = base64::encode(respFrame, respLen);
-    String encoded_raw = base64::encode(respFrame, respLenRaw);
+    String encoded_raw = base64::encode(respFrame_raw, respLenRaw);
     MQTT_Client::getInstance().sendRx(encoded, noisyInterrupt,encoded_raw);
   }
   else if (state == RADIOLIB_ERR_CRC_MISMATCH)
@@ -612,7 +616,7 @@ uint8_t Radio::listen()
     if (status.modeminfo.filter[0] == 0)
     {
       String error_encoded = base64::encode("Error_CRC");
-      String encoded_raw = base64::encode(respFrame, respLenRaw);
+      String encoded_raw = base64::encode(respFrame_raw, respLenRaw);
       MQTT_Client::getInstance().sendRx(error_encoded, noisyInterrupt,encoded_raw);
     }
     else
