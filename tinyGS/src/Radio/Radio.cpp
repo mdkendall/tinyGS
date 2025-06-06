@@ -392,7 +392,7 @@ uint8_t Radio::listen()
   received = false;
 
   size_t respLen = 0;
-  uint8_t *respFrame = 0;
+  size_t respLenRaw = 0;
   int16_t state = 0;
 
   PacketInfo newPacketInfo;
@@ -402,13 +402,17 @@ uint8_t Radio::listen()
   // workaround for radiolib FSX fixed packet definition returning always a size of 255bytes
   if (respLen == 255) respLen = status.modeminfo.len;
 
-  respFrame = new uint8_t[respLen];
-  state = radioHal->readData(respFrame, respLen);
-  newPacketInfo.rssi = radioHal->getRSSI();
-  newPacketInfo.snr = radioHal->getSNR();
-  newPacketInfo.frequencyerror = radioHal->getFrequencyError();
+ uint8_t* respFrame = new uint8_t[respLen];
+ uint8_t* respFrame_raw = new uint8_t[respLen];
+ respLenRaw =  respLen;
 
-
+ state = radioHal->readData(respFrame, respLen);
+ memcpy(respFrame_raw, respFrame, respLen);
+ 
+ newPacketInfo.rssi = radioHal->getRSSI();
+ newPacketInfo.snr = radioHal->getSNR();
+ newPacketInfo.frequencyerror = radioHal->getFrequencyError();
+ 
   // check if the packet info is exactly the same as the last one
   if (newPacketInfo.rssi == status.lastPacketInfo.rssi &&
       newPacketInfo.snr == status.lastPacketInfo.snr &&
@@ -416,12 +420,13 @@ uint8_t Radio::listen()
   {
     Log::console(PSTR("Interrupt triggered but no new data available. Check wiring and electrical interferences."));
     delete[] respFrame;
+    delete[] respFrame_raw;
     startRx();
     return 4;
   }
 
   status.modeminfolastpckt = status.modeminfo;
-  if (status.tle.freqDoppler!=0)  status.lastPacketInfo.freqDoppler = status.tle.freqDoppler;
+  if (status.tle.freqDoppler!=0)  status.lastPacketInfo.freqDoppler = status.tle.freqDoppler; else status.lastPacketInfo.freqDoppler =0;
 
   struct tm *timeinfo;
   time_t currenttime = time(NULL);
@@ -480,6 +485,7 @@ uint8_t Radio::listen()
     }
     delete[] byteStr;
 
+
     bool packet_logged=false;
     if (allow_decode){
       String modo=status.modeminfo.modem_mode;
@@ -505,10 +511,12 @@ uint8_t Radio::listen()
         size_t sizeAx25bin=0;
         ax25bin=new uint8_t[buffSize_pck];
         frame_error=BitCode::nrz2ax25(respFrame_fsk,buffSize_pck,ax25bin,&sizeAx25bin);
+        delete[] respFrame_fsk; // Clean up respFrame_fsk
         if (frame_error!=0){
           Log::console(PSTR("Frame error!"));
         }
         //RAW packet is replaced by the processed packet.
+        delete[] respFrame; // Clean up original respFrame before reassignment
         respFrame=ax25bin;
         respLen=sizeAx25bin;
       }
@@ -520,8 +528,10 @@ uint8_t Radio::listen()
         BitCode::pn9(respFrame,respLen,salida);
         respFrame=salida;
       }
-
-      if (frame_error==0 && status.modeminfo.crc_by_sw){
+      board_t board;
+      ConfigManager::getInstance().getBoardConfig(board);
+      // check CRC by software if pckt is <65 bytes, of if it's bigger only for modules SX126x 
+      if (frame_error==0 && status.modeminfo.crc_by_sw && ( board.L_radio==RADIO_SX1268 || board.L_radio==RADIO_SX1262 || respLen < 65 )){
         size_t newsize=respLen-status.modeminfo.crc_nbytes;
         RadioLibCRCInstance.size = status.modeminfo.crc_nbytes*8;
         RadioLibCRCInstance.poly = status.modeminfo.crc_poly;
@@ -549,6 +559,7 @@ uint8_t Radio::listen()
         Log::log_packet(respFrame,respLen);
         packet_logged=true;
         if (fcs!=crcfield){
+            status.lastPacketInfo.crc_error = true;
             Log::console(PSTR("Error_CRC"));
             char *cad=new char[10];
             respLen=10;
@@ -556,6 +567,7 @@ uint8_t Radio::listen()
             for (int i=0;i<10;i++){
               respFrame[i]=(char)cad[i];
             }
+            delete[] cad; // Clean up cad
           }          
         }
       }
@@ -584,14 +596,16 @@ uint8_t Radio::listen()
       {
         Log::console(PSTR("Filter enabled, doesn't looks like the expected satellite packet"));
         delete[] respFrame;
+        delete[] respFrame_raw;
         startRx();
         return 5;
       }
     }
 
-    status.lastPacketInfo.crc_error = false;
+//    status.lastPacketInfo.crc_error = false;
     String encoded = base64::encode(respFrame, respLen);
-    MQTT_Client::getInstance().sendRx(encoded, noisyInterrupt);
+    String encoded_raw = base64::encode(respFrame_raw, respLenRaw);
+    MQTT_Client::getInstance().sendRx(encoded, noisyInterrupt,encoded_raw);
   }
   else if (state == RADIOLIB_ERR_CRC_MISMATCH)
   {
@@ -602,18 +616,21 @@ uint8_t Radio::listen()
     if (status.modeminfo.filter[0] == 0)
     {
       String error_encoded = base64::encode("Error_CRC");
-      MQTT_Client::getInstance().sendRx(error_encoded, noisyInterrupt);
+      String encoded_raw = base64::encode(respFrame_raw, respLenRaw);
+      MQTT_Client::getInstance().sendRx(error_encoded, noisyInterrupt,encoded_raw);
     }
     else
     {
       Log::console(PSTR("Filter enabled, Error CRC filtered"));
       delete[] respFrame;
+      delete[] respFrame_raw;
       startRx();
       return 5;
     }
   }
 
   delete[] respFrame;
+  delete[] respFrame_raw;
 
   noisyInterrupt = false;
 
