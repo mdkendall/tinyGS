@@ -9,3 +9,5 @@ tinyGS/tinyGS.ino.cpp
 .aider*
 .env
 .vscode/*
+
+*.bin
