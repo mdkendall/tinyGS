@@ -366,7 +366,7 @@ void checkButton()
     {
       Log::console(PSTR("Rescue mode forced by button long press!"));
       Log::console(PSTR("Connect to the WiFi AP: %s and open a web browser on ip 192.168.4.1 to configure your station and manually reboot when you finish."), configManager.getThingName());
-      configManager.forceDefaultPassword(false);
+      configManager.forceDefaultPassword(true);
       configManager.forceApMode(true);
       buttPressedStart = 0;
     }
