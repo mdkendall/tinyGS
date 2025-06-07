@@ -6,9 +6,9 @@ VERSION=$(grep 'const uint32_t version' tinyGS/src/Status.h | sed -E 's/.*= ([0-
 
 build_dir=".pio/build"
 
-esp32_dir="heltec_wifi_lora_32"
-esp32s3_dir="heltec_wifi_lora_32_V3"
-esp32c3_dir="esp32c3"
+esp32_dir="ESP32"
+esp32s3_dir="ESP32-S3"
+esp32c3_dir="ESP32-C3"
 
 platformio run -e ${esp32_dir} -e ${esp32s3_dir} -e ${esp32c3_dir}
 
