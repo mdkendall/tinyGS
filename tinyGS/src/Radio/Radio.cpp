@@ -562,9 +562,9 @@ uint8_t Radio::listen()
             status.lastPacketInfo.crc_error = true;
             Log::console(PSTR("Error_CRC"));
             char *cad=new char[10];
-            respLen=10;
+            respLen=9;
             sprintf(cad,"Error_CRC");
-            for (int i=0;i<10;i++){
+            for (int i=0;i<9;i++){
               respFrame[i]=(char)cad[i];
             }
             delete[] cad; // Clean up cad
@@ -607,7 +607,7 @@ uint8_t Radio::listen()
     String encoded_raw = base64::encode(respFrame_raw, respLenRaw);
     MQTT_Client::getInstance().sendRx(encoded, noisyInterrupt,encoded_raw);
   }
-  else if (state == RADIOLIB_ERR_CRC_MISMATCH)
+  else if (state == RADIOLIB_ERR_CRC_MISMATCH || status.lastPacketInfo.crc_error )
   {
     // packet was received, but is malformed
     status.lastPacketInfo.crc_error = true;
