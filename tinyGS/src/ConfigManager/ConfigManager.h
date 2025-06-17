@@ -33,6 +33,9 @@
 #include "IotWebConf2ESP32HTTPUpdateServer.h"
 #endif
 
+static const char* MQTT_SERVER_HOST="mqtt.tinygs.com";
+static const char* MQTT_SERVER_PORT = "8883";
+
 constexpr auto STATION_NAME_LENGTH = 21;
 constexpr auto COORDINATE_LENGTH = 10;
 constexpr auto MIN_COORDINATE_LENGTH = 1;
@@ -333,12 +336,11 @@ private:
   iotwebconf2::NumberParameter latitudeParam = iotwebconf2::NumberParameter("Latitude (3 decimals, will be public)", "lat", latitude, COORDINATE_LENGTH, NULL, "0.000", "min='-180' max='180' step='0.001'");
   iotwebconf2::NumberParameter longitudeParam = iotwebconf2::NumberParameter("Longitude (3 decimals, will be public)", "lng", longitude, COORDINATE_LENGTH, NULL, "-0.000", "min='-180' max='180' step='0.001'");
   iotwebconf2::SelectParameter tzParam = iotwebconf2::SelectParameter("Time Zone", "tz", tz, TZ_LENGTH, (char *)TZ_VALUES, (char *)TZ_NAMES, sizeof(TZ_VALUES) / TZ_LENGTH, TZ_NAME_LENGTH);
-  
   iotwebconf2::ParameterGroup groupMqtt = iotwebconf2::ParameterGroup ("MQTT credentials", "MQTT credentials (First join the group <a href='https://t.me/joinchat/DmYSElZahiJGwHX6jCzB3Q'>here</a>)<br>Then open a private chat with <a href='https://t.me/tinygs_personal_bot'>@tinygs_personal_bot</a> and ask /mqtt");
-  iotwebconf2::TextParameter mqttServerParam = iotwebconf2::TextParameter ("Server address", "mqtt_server", mqttServer, MQTT_SERVER_LENGTH, NULL, NULL, "required type=\"text\" maxlength=30");
-  iotwebconf2::NumberParameter mqttPortParam = iotwebconf2::NumberParameter ("Server Port", "mqtt_port", mqttPort, MQTT_PORT_LENGTH, NULL, NULL, "required min=\"0\" max=\"65536\" step=\"1\"");
-  iotwebconf2::TextParameter mqttUserParam = iotwebconf2::TextParameter ("MQTT Username", "mqtt_user", mqttUser, MQTT_USER_LENGTH, NULL, NULL, "required type=\"text\" maxlength=30");
-  iotwebconf2::TextParameter mqttPassParam = iotwebconf2::PasswordParameter ("MQTT Password", "mqtt_pass", mqttPass, MQTT_PASS_LENGTH, NULL, NULL, "required type=\"text\" maxlength=30");
+  iotwebconf2::TextParameter mqttServerParam = iotwebconf2::TextParameter ("Server address", "mqtt_server", mqttServer, MQTT_SERVER_LENGTH, MQTT_SERVER_HOST, NULL, "type=\"text\" maxlength=30");
+  iotwebconf2::NumberParameter mqttPortParam = iotwebconf2::NumberParameter ("Server Port", "mqtt_port", mqttPort, MQTT_PORT_LENGTH, MQTT_SERVER_PORT, NULL, "min=\"0\" max=\"65536\" step=\"1\"");
+  iotwebconf2::TextParameter mqttUserParam = iotwebconf2::TextParameter ("MQTT Username", "mqtt_user", mqttUser, MQTT_USER_LENGTH, NULL, NULL, "type=\"text\" maxlength=30");
+  iotwebconf2::TextParameter mqttPassParam = iotwebconf2::PasswordParameter ("MQTT Password", "mqtt_pass", mqttPass, MQTT_PASS_LENGTH, NULL, NULL, "type=\"text\" maxlength=30");
 
   iotwebconf2::ParameterGroup groupBoardConfig = iotwebconf2::ParameterGroup("Board config", "Board config");
   iotwebconf2::SelectParameter boardParam = iotwebconf2::SelectParameter("Board type", "board", board, BOARD_LENGTH, (char *)BOARD_VALUES, (char *)BOARD_NAMES, sizeof(BOARD_VALUES) / BOARD_LENGTH, BOARD_NAME_LENGTH);
