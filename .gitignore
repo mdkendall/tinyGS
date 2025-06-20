@@ -7,5 +7,6 @@ tinyGS/tinyGS.ino.cpp
 .aider*
 .env
 .vscode/*
+context_portal
 
 *.bin

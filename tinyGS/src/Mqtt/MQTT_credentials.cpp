@@ -7,7 +7,7 @@
 #include "../Logger/Logger.h"
 #include <ArduinoJson.h>
 
-#ifdef TEST_API
+#if TEST_API==1
 const char* API_URL = "https://api.test.tinygs.com/credentials?otp=";
 #else
 const char* API_URL = "https://api.tinygs.com/credentials?otp=";
