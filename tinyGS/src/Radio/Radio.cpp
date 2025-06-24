@@ -189,7 +189,7 @@ if (status.modeminfo.tle[0] != 0)
   double       dfreqTX  = status.modeminfo.frequency;     // Nominal uplink frequency
   
   struct tm *timeinfo;
-  time_t currenttime = time(NULL) +(status.tle.refresh/2000);       // calculate the TLE for now + the half of the refresh time.
+  time_t currenttime = time(NULL);  // oe6isp  time(NULL) +(status.tle.refresh/2000);       // calculate the TLE for now + the half of the refresh time.
   timeinfo = gmtime(&currenttime);
 
 
@@ -274,8 +274,9 @@ if (status.modeminfo.tle[0] != 0)
 
   Log::debug(PSTR("Doppler -> New: %.2f Hz Old: %.2f Hz  Dif: %.2f Hz"),  status.tle.new_freqDoppler, status.tle.freqDoppler, abs( status.tle.new_freqDoppler- status.tle.freqDoppler) );
   if (abs( status.tle.new_freqDoppler- status.tle.freqDoppler) >  status.tle.freqTol) {
-     status.tle.freqDoppler = status.tle.new_freqDoppler;
-     setFrequency();}
+   //  status.tle.freqDoppler = status.tle.new_freqDoppler;
+    status.tle.freqDoppler = status.tle.new_freqDoppler - status.tle.freqTol; // OE6ISP 
+    setFrequency();}
   
 } else {
 
