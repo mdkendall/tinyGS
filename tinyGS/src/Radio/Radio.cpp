@@ -273,11 +273,14 @@ if (status.modeminfo.tle[0] != 0)
   //Serial.printf("\r\nSun -> Lat: %.4f Lon: %.4f (MAP %dx%d: x = %d,y = %d) Az: %.2f El: %.2f\r\n\r\n", dSunLAT, dSunLON, MAP_MAXX, MAP_MAXY, ixSUN, iySUN, dSunAZ, dSunEL);
 
   Log::debug(PSTR("Doppler -> New: %.2f Hz Old: %.2f Hz  Dif: %.2f Hz"),  status.tle.new_freqDoppler, status.tle.freqDoppler, abs( status.tle.new_freqDoppler- status.tle.freqDoppler) );
-  if (abs( status.tle.new_freqDoppler- status.tle.freqDoppler) >  status.tle.freqTol) {
-   //  status.tle.freqDoppler = status.tle.new_freqDoppler;
-    status.tle.freqDoppler = status.tle.new_freqDoppler - status.tle.freqTol; // OE6ISP 
-    setFrequency();}
-  
+  if(status.tle.dSatEL > 0) // oe6isp
+  {
+	if (abs( status.tle.new_freqDoppler- status.tle.freqDoppler) >  status.tle.freqTol) {
+    //  status.tle.freqDoppler = status.tle.new_freqDoppler;
+      status.tle.freqDoppler = status.tle.new_freqDoppler - status.tle.freqTol; // OE6ISP 
+     setFrequency();
+	 }
+  }
 } else {
 
   status.tle.freqDoppler = 0;
@@ -634,6 +637,10 @@ uint8_t Radio::listen()
   delete[] respFrame_raw;
 
   noisyInterrupt = false;
+  
+  // force doppler-recalc
+  status.tle.freqDoppler = 99999; // oe6isp
+  tle(); // oe6isp
 
   // put module back to listen mode
   startRx();
