@@ -509,7 +509,10 @@ void MQTT_Client::manageMQTTData(char *topic, uint8_t *payload, unsigned int len
       Log::console(PSTR("ERROR: Invalid frequency. Ignoring."));
       return;
     }
-   
+ 
+    // disable interrup to avoid allocating received packet to the wrong satellite.
+    radio.disableInterrupt();
+
     ModemInfo &m = status.modeminfo;
     m.modem_mode = doc["mode"].as<String>();
     strcpy(m.satellite, doc["sat"].as<char *>());
