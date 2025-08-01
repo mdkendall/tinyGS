@@ -213,6 +213,9 @@ void MQTT_Client::sendWelcome()
   doc["slot"] = esp_ota_get_running_partition ()->label;
   doc["pSize"] = esp_ota_get_running_partition ()->size;
   doc["idfv"] = esp_get_idf_version();
+  board_t board;
+  if (configManager.getBoardConfig(board))
+    doc["radioChip"] = board.L_radio;
 
   Log::debug(PSTR("Running on %s"),  esp_ota_get_running_partition ()->label);
   Log::debug(PSTR("Partition size: %d bytes"),esp_ota_get_running_partition ()->size);
@@ -282,7 +285,7 @@ void MQTT_Client::sendStatus()
   time(&now);
   struct timeval tv;
   gettimeofday(&tv, NULL);
-  const size_t capacity = JSON_ARRAY_SIZE(2) + JSON_OBJECT_SIZE(29) + 25;
+  const size_t capacity = JSON_ARRAY_SIZE(2) + JSON_OBJECT_SIZE(29) + 35;
   DynamicJsonDocument doc(capacity);
   JsonArray station_location = doc.createNestedArray("station_location");
   station_location.add(configManager.getLatitude());
