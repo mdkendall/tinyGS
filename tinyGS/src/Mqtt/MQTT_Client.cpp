@@ -619,6 +619,8 @@ void MQTT_Client::manageMQTTData(char *topic, uint8_t *payload, unsigned int len
   }
 
   radio.begin();
+  
+  radio.enableInterrupt();
 //    radio.currentRssi();
     result = 0;
   }
