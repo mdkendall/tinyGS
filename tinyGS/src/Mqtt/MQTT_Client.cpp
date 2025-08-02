@@ -252,6 +252,7 @@ void MQTT_Client::sendRx(String packet, bool noisy, String raw_packet)
     doc["sf"] = status.modeminfolastpckt.sf;
     doc["cr"] = status.modeminfolastpckt.cr;
     doc["bw"] = status.modeminfolastpckt.bw;
+    doc["iIQ"] = status.modeminfolastpckt.iIQ;
   }
   else
   {
