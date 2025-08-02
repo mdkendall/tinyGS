@@ -531,6 +531,7 @@ void MQTT_Client::manageMQTTData(char *topic, uint8_t *payload, unsigned int len
       m.gain = doc["gain"];
       m.crc = doc["crc"];
       m.fldro = doc["fldro"];
+      m.iIQ = doc["iIQ"] ? doc["iIQ"].as<bool>() : false; // default to false if not set
     }
     else
     {

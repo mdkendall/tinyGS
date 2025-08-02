@@ -118,8 +118,8 @@ int16_t Radio::begin()
         radioHal->autoLDRO();
       else
         radioHal->forceLDRO(m.fldro);
-
       radioHal->setCRC(m.crc);
+      radioHal->invertIQ(m.iIQ);
     } 
     else 
     {

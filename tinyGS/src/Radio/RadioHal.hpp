@@ -28,6 +28,7 @@ public:
   virtual int16_t setEncoding(uint8_t encoding) = 0;
   virtual void setRfSwitchPins(uint8_t rxEnPin, uint8_t txEnPin) = 0;
   virtual int16_t setWhitening(bool enabled, uint16_t initial) = 0;  
+  virtual int16_t invertIQ (bool enable) = 0;
 };
 
 
@@ -46,6 +47,7 @@ public:
   int16_t autoLDRO();
 
   int16_t forceLDRO(bool enable);
+  int16_t invertIQ(bool enable);
 
   int16_t setCRC(uint8_t len,	uint16_t initial = 0x1D0F, uint16_t polynomial = 0x1021, bool inverted = true );
   

@@ -416,3 +416,34 @@ int16_t RadioHal<SX1280>::setWhitening(bool enabled, uint16_t initial)
 {
     return 0;
 }
+
+
+template<>
+int16_t RadioHal<SX1278>::invertIQ(bool enable)
+{
+    return radio->invertIQ(enable);
+}
+
+template<>
+int16_t RadioHal<SX1276>::invertIQ(bool enable)
+{
+    return radio->invertIQ(enable);
+}
+
+template<>
+int16_t RadioHal<SX1268>::invertIQ(bool enable)
+{
+    return radio->invertIQ(enable);
+}
+
+template<>
+int16_t RadioHal<SX1262>::invertIQ(bool enable)
+{
+    return radio->invertIQ(enable);
+}
+
+template<>
+int16_t RadioHal<SX1280>::invertIQ(bool enable)
+{
+    return radio->invertIQ(enable);
+}
