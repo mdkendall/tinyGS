@@ -901,6 +901,7 @@ void ConfigManager::parseModemStartup()
     m.gain = doc["gain"];
     m.crc = doc["crc"];
     m.fldro = doc["fldro"];
+    m.iIQ = doc["iIQ"] ? doc["iIQ"].as<bool>() : false; // default to false if not set
   }
   else
   {
