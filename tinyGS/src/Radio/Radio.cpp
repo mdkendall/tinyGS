@@ -120,6 +120,12 @@ int16_t Radio::begin()
         radioHal->forceLDRO(m.fldro);
       radioHal->setCRC(m.crc);
       radioHal->invertIQ(m.iIQ);
+
+      if (m.len==0) {
+       CHECK_ERROR(radioHal->explicitHeader());}
+      else  {
+       CHECK_ERROR(radioHal->implicitHeader(m.len));}
+      
     } 
     else 
     {

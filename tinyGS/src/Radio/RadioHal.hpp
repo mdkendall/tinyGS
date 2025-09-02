@@ -29,6 +29,8 @@ public:
   virtual void setRfSwitchPins(uint8_t rxEnPin, uint8_t txEnPin) = 0;
   virtual int16_t setWhitening(bool enabled, uint16_t initial) = 0;  
   virtual int16_t invertIQ (bool enable) = 0;
+  virtual int16_t explicitHeader() = 0;
+  virtual int16_t implicitHeader(size_t len) = 0;
 };
 
 
@@ -48,6 +50,8 @@ public:
 
   int16_t forceLDRO(bool enable);
   int16_t invertIQ(bool enable);
+  int16_t explicitHeader(); 
+  int16_t implicitHeader(size_t len);
 
   int16_t setCRC(uint8_t len,	uint16_t initial = 0x1D0F, uint16_t polynomial = 0x1021, bool inverted = true );
   

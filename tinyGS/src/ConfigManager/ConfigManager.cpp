@@ -902,6 +902,7 @@ void ConfigManager::parseModemStartup()
     m.crc = doc["crc"];
     m.fldro = doc["fldro"];
     m.iIQ = doc["iIQ"] ? doc["iIQ"].as<bool>() : false; // default to false if not set
+    m.len = doc["len"] ? doc["len"].as<int>() : 0;      // default to 0 if not set
   }
   else
   {

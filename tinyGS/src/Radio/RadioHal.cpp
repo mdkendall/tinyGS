@@ -447,3 +447,63 @@ int16_t RadioHal<SX1280>::invertIQ(bool enable)
 {
     return radio->invertIQ(enable);
 }
+
+template<>
+int16_t RadioHal<SX1278>::explicitHeader()
+{
+    return radio->explicitHeader();
+}
+
+template<>
+int16_t RadioHal<SX1276>::explicitHeader()
+{
+    return radio->explicitHeader();
+}
+
+template<>
+int16_t RadioHal<SX1268>::explicitHeader()
+{
+    return radio->explicitHeader();
+}
+
+template<>
+int16_t RadioHal<SX1262>::explicitHeader()
+{
+    return radio->explicitHeader();
+}
+
+template<>
+int16_t RadioHal<SX1280>::explicitHeader()
+{
+    return radio->explicitHeader();
+}
+
+template<>
+int16_t RadioHal<SX1278>::implicitHeader(size_t len)
+{
+    return radio->implicitHeader(len);
+}
+
+template<>
+int16_t RadioHal<SX1276>::implicitHeader(size_t len)
+{
+    return radio->implicitHeader(len);
+}
+
+template<>
+int16_t RadioHal<SX1268>::implicitHeader(size_t len)
+{
+    return radio->implicitHeader(len);
+}
+
+template<>
+int16_t RadioHal<SX1262>::implicitHeader(size_t len)
+{
+    return radio->implicitHeader(len);
+}
+
+template<>
+int16_t RadioHal<SX1280>::implicitHeader(size_t len)
+{
+    return radio->implicitHeader(len);
+}
