@@ -191,33 +191,33 @@ void RadioHal<SX1280>::setPacketReceivedAction(void (*func)(void))
 }
 
 template<>
-int16_t RadioHal<SX1278>::startReceive(uint8_t len, uint8_t mode)
+int16_t RadioHal<SX1278>::startReceive()
 {
-    return radio->startReceive(len, mode);
+    return radio->startReceive();
 }
 
 template<>
-int16_t RadioHal<SX1276>::startReceive(uint8_t len, uint8_t mode)
+int16_t RadioHal<SX1276>::startReceive()
 {
-    return radio->startReceive(len, mode);
+    return radio->startReceive();
 }
 
 template<>
-int16_t RadioHal<SX1268>::startReceive(uint8_t len, uint8_t mode)
+int16_t RadioHal<SX1268>::startReceive()
 {
-    return radio->startReceive(len);
+    return radio->startReceive();
 }
 
 template<>
-int16_t RadioHal<SX1262>::startReceive(uint8_t len, uint8_t mode)
+int16_t RadioHal<SX1262>::startReceive()
 {
-    return radio->startReceive(len);
+    return radio->startReceive();
 }
 
 template<>
-int16_t RadioHal<SX1280>::startReceive(uint8_t len, uint8_t mode)
+int16_t RadioHal<SX1280>::startReceive()
 {
-    return radio->startReceive(len);
+    return radio->startReceive();
 }
 
 template<>
