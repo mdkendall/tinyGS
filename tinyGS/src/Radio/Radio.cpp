@@ -327,6 +327,10 @@ void Radio::startRx()
   enableInterrupt();
   }
 
+  void Radio::clearPacketReceivedAction()
+  {
+    radioHal->clearPacketReceivedAction();
+  }
 
  void Radio::currentRssi()
 {

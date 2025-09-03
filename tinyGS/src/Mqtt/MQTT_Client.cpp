@@ -512,6 +512,7 @@ void MQTT_Client::manageMQTTData(char *topic, uint8_t *payload, unsigned int len
     }
  
     // disable interrup to avoid allocating received packet to the wrong satellite.
+    radio.clearPacketReceivedAction();
     radio.disableInterrupt();
 
     ModemInfo &m = status.modeminfo;
