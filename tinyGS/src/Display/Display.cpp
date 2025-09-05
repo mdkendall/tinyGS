@@ -20,6 +20,7 @@
 #include "Display.h"
 #include "graphics.h"
 #include "../ConfigManager/ConfigManager.h"
+#include "../Mqtt/MQTT_credentials.h"
 
 SSD1306* display;
 OLEDDisplayUi* ui = NULL;
@@ -304,9 +305,9 @@ void displayShowConnected()
 {
   display->clear();
   display->drawXbm(34, 0 , WiFi_Logo_width, WiFi_Logo_height, WiFi_Logo_bits);
-  
   display->setTextAlignment(TEXT_ALIGN_CENTER);
-  display->drawString(64 , 35 , "Connected " + String(ConfigManager::getInstance().getWiFiSSID()));
+  display->drawString(64 , 34 , "WiFi:" + String(ConfigManager::getInstance().getWiFiSSID()));
+  display->drawString(64 , 44 , "OTP --->    " + String(mqttCredentials.getOTPCode ()) );
   display->drawString(64 ,53 , (WiFi.localIP().toString()));
   display->display();
 }

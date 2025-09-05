@@ -149,10 +149,29 @@ void ConfigManager::handleRoot()
   s += FPSTR(IOTWEBCONF_HTML_HEAD_END);
   s += FPSTR(IOTWEBCONF_HTML_BODY_INNER);
   s += "<div><img src=\"" + String(LOGO_URL) + "\"></div><br/>";
+  if ((getMqttServer()[0] == '\0') || (getMqttUser()[0] == '\0') || (getMqttPass()[0] == '\0')) {
+    s += F("<div>Device is not connected to tinyGS:</div>"); 
+    s += F("<table style=\"width:75%;\">");
+    s += "<tr><td style=\"text-align:left;\">OTP code:</td><td style=\"text-align:left;\"><b>" + String(mqttCredentials.getOTPCode()) + "</b></td></tr>";
+    s += "</table><br />";
+}
   s += "<button onclick=\"window.location.href='" + String(DASHBOARD_URL) + "';\">Station dashboard</button><br /><br />";
   s += "<button onclick=\"window.location.href='" + String(CONFIG_URL) + "';\">Configure parameters</button><br /><br />";
   s += "<button onclick=\"window.location.href='" + String(UPDATE_URL) + "';\">Upload new version</button><br /><br />";
   s += "<button onclick=\"window.location.href='" + String(RESTART_URL) + "';\">Restart Station</button><br /><br />";
+  
+ if ((getThingName()[0] == 'M') && (getThingName()[2] == ' ')  && (getMqttPass()[0] == '\0')) {
+    s += F("<table style=\"width:75%;\">");
+    s += "<tr><td style=\"text-align:left;\">OTP code:</td><td style=\"text-align:left;\"><b><a href=\"https://tinygs.com/user/addstation\">" + String(mqttCredentials.getOTPCode()) + "</a></b></td></tr>"; 
+    s += "</table><br />";
+    s += F("<div>Default local dashboard credentials:</div>"); 
+    s += F("<table style=\"width:75%;\">");
+    s += F("<tr><td style=\"text-align:left;\">user:</td><td style=\"text-align:left;\"><b>admin</b></td></tr>");
+    s += "<tr><td style=\"text-align:left;\">password:</td><td style=\"text-align:left;\"><b>" + String(getApPasswordParameter()->valueBuffer) + "</b></td></tr>";
+    s += "</table>";
+}
+
+  
   s += FPSTR(IOTWEBCONF_HTML_END);
 
   s.replace("{v}", FPSTR(TITLE_TEXT));
@@ -188,8 +207,7 @@ void ConfigManager::handleDashboard()
   s += FPSTR(IOTWEBCONF_HTML_HEAD_END);
   s += FPSTR(IOTWEBCONF_DASHBOARD_BODY_INNER);
   s += "<div><img src=\"" + String(LOGO_URL) + "\"></div><br/>";
-
-  // build svg of world map with animated satellite position
+    // build svg of world map with animated satellite position
   uint ix = 0;
   uint sx;
   String svg = "<div style=""margin-left:35px""><svg width""100%"" height=""auto"" viewBox=""0 0 262 134"" xmlns=""http://www.w3.org/2000/svg"">";
@@ -228,6 +246,13 @@ void ConfigManager::handleDashboard()
   svg += "</circle>";
   svg += "</svg></div>";
   s += svg;
+
+
+
+  if ((getMqttServer()[0] == '\0') || (getMqttUser()[0] == '\0') || (getMqttPass()[0] == '\0')) {
+    s += F("Device is not connected to tinyGS.<br /> OTP code:"); 
+    s += "<div style=\"color:blue;\"><h3><a href=\"https://tinygs.com/user/addstation\">" + String(mqttCredentials.getOTPCode()) + "</a></h3></div>";
+    }
 
   s += F("</table></div><div class=\"card\"><h3>Groundstation Status</h3><table id=""gsstatus"">");
   s += "<tr><td>Name </td><td>" + String(getThingName()) + "</td></tr>";

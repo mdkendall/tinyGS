@@ -124,7 +124,7 @@ void wifiConnected()
   displayShowConnected();
   arduino_ota_setup();
   configManager.delay(100); // finish animation
-
+  
   if (configManager.getLowPower())
   {
     Log::debug(PSTR("Set low power CPU=80Mhz"));
@@ -146,6 +146,9 @@ void setup()
   improvWiFi.setVersion (status.version);
   Log::console (PSTR ("TinyGS Version %d - %s"), status.version, status.git_version);
   Log::console(PSTR("Chip  %s - %d"),  ESP.getChipModel(),ESP.getChipRevision());
+  if ((configManager.getMqttServer ()[0] == '\0') || (configManager.getMqttUser ()[0] == '\0') || (configManager.getMqttPass ()[0] == '\0')) {
+      mqttCredentials.generateOTPCode ();
+  }
   configManager.setWifiConnectionCallback(wifiConnected);
   configManager.setConfiguredCallback(configured);
   configManager.init();
@@ -165,10 +168,6 @@ void setup()
   displayShowInitialCredits();
   configManager.delay(1000);
   mqtt.begin ();
-
-  if ((configManager.getMqttServer ()[0] == '\0') || (configManager.getMqttUser ()[0] == '\0') || (configManager.getMqttPass ()[0] == '\0')) {
-      mqttCredentials.generateOTPCode ();
-  }
 
   if (configManager.getOledBright() == 0)
   {
