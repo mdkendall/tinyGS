@@ -66,7 +66,7 @@ std::vector<std::string> TinyGSImprov::getLocalUrl () {
     return {
       // URL where user can finish onboarding or use device
       // Recommended to use website hosted by device
-      String ("http://admin:12345678@" + WiFi.localIP ().toString () + "/dashboard").c_str ()
+      String ("http://admin:12345678@" + WiFi.localIP ().toString () + "/").c_str ()
     };
 }
 
