@@ -528,6 +528,7 @@ uint8_t Radio::listen()
         delete[] respFrame_fsk; // Clean up respFrame_fsk
         if (frame_error!=0){
           Log::console(PSTR("Frame error!"));
+          status.lastPacketInfo.crc_error = true;
         }
         //RAW packet is replaced by the processed packet.
         delete[] respFrame; // Clean up original respFrame before reassignment
