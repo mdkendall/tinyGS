@@ -33,7 +33,7 @@ jobs:
         python -m pip install --upgrade pip
         pip install --upgrade platformio
     - name: Run PlatformIO
-      run: pio run -e default
+      run: pio run -e ESP32
     - name: Convert bootloader format from elf to bin
       run: >
         python ~/.platformio/packages/tool-esptoolpy/esptool.py --chip esp32 elf2image
@@ -41,20 +41,20 @@ jobs:
         ~/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32/bin/bootloader_dio_40m.elf
     - name: Create merged binary
       run: >
-        python ~/.platformio/packages/tool-esptoolpy/esptool.py --chip esp32 merge_bin -o .pio/build/default/firmware-full.bin
+        python ~/.platformio/packages/tool-esptoolpy/esptool.py --chip esp32 merge_bin -o .pio/build/ESP32/firmware-full.bin
         --flash_mode dio --flash_freq 40m --flash_size 4MB
         0x1000 ~/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32/bin/bootloader_dio_40m.bin
-        0x8000 .pio/build/default/partitions.bin
+        0x8000 .pio/build/ESP32/partitions.bin
         0xe000 ~/.platformio/packages/framework-arduinoespressif32/tools/partitions/boot_app0.bin
-        0x10000 .pio/build/default/firmware.bin
+        0x10000 .pio/build/ESP32/firmware.bin
     - name: Rename binaries
       run: |
-        mv .pio/build/default/firmware.bin .pio/build/default/tinygs-$(git describe --tags --always)-ota.bin
-        mv .pio/build/default/firmware-full.bin .pio/build/default/tinygs-$(git describe --tags --always)-full.bin
+        mv .pio/build/ESP32/firmware.bin .pio/build/ESP32/tinygs-$(git describe --tags --always)-ota.bin
+        mv .pio/build/ESP32/firmware-full.bin .pio/build/ESP32/tinygs-$(git describe --tags --always)-full.bin
     - name: Archive build artifacts
       uses: actions/upload-artifact@v3
       with:
         name: firmware
         path: |
-          .pio/build/default/tinygs-*-ota.bin
-          .pio/build/default/tinygs-*-full.bin
+          .pio/build/ESP32/tinygs-*-ota.bin
+          .pio/build/ESP32/tinygs-*-full.bin
