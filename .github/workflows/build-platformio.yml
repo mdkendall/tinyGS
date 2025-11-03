@@ -52,7 +52,7 @@ jobs:
         mv .pio/build/ESP32/firmware.bin .pio/build/ESP32/tinygs-$(git describe --tags --always)-ota.bin
         mv .pio/build/ESP32/firmware-full.bin .pio/build/ESP32/tinygs-$(git describe --tags --always)-full.bin
     - name: Archive build artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: firmware
         path: |
