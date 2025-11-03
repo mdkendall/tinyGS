@@ -26,8 +26,17 @@
 #include "../Status.h"
 #include "../Mqtt/MQTT_Client.h"
 #include "RadioHal.hpp"
+#include "../Power/Power.h"
 
 extern Status status;
+
+enum RadioModelNum {
+  RADIO_SX1278 = 1,
+  RADIO_SX1276 = 2,
+  RADIO_SX1268 = 5,
+  RADIO_SX1262 = 6,
+  RADIO_SX1280 = 8
+};
 
 class Radio {
 public:
@@ -39,36 +48,24 @@ public:
 
   void init();
   int16_t begin();
+  void setFrequency();
   void enableInterrupt();
   void disableInterrupt();
   void startRx();
+  void tle();
   void currentRssi();
   int16_t moduleSleep();
   uint8_t listen();
   bool isReady() { return status.radio_ready; }
   int16_t remote_freq(char* payload, size_t payload_len);
-  int16_t remote_bw(char* payload, size_t payload_len);
-  int16_t remote_sf(char* payload, size_t payload_len);
-  int16_t remote_cr(char* payload, size_t payload_len);
-  int16_t remote_crc(char* payload, size_t payload_len);
-  int16_t remote_lsw(char* payload, size_t payload_len);
-  int16_t remote_fldro(char* payload, size_t payload_len);
-  int16_t remote_aldro(char* payload, size_t payload_len);
-  int16_t remote_pl(char* payload, size_t payload_len);
+
   int16_t remote_begin_lora(char* payload, size_t payload_len);
   int16_t remote_begin_fsk(char* payload, size_t payload_len);
-  int16_t remote_br(char* payload, size_t payload_len);
-  int16_t remote_fd(char* payload, size_t payload_len);
-  int16_t remote_fbw(char* payload, size_t payload_len);
-  int16_t remote_fsw(char* payload, size_t payload_len);
-  int16_t remote_fook(char* payload, size_t payload_len);
-  int16_t remote_SPIsetRegValue(char* payload, size_t payload_len);
-  void remote_SPIwriteRegister(char* payload, size_t payload_len);
-  int16_t remote_SPIreadRegister(char* payload, size_t payload_len);
+
   int16_t sendTx(uint8_t* data, size_t length);
   int16_t sendTestPacket();
   int16_t remoteSetFreqOffset(char* payload, size_t payload_len);
-
+  void clearPacketReceivedAction();
    
 private:
   Radio();
@@ -78,6 +75,7 @@ private:
   static void setFlag();
   SPIClass spi;
   const char* TEST_STRING = "TinyGS-test "; // make sure this always start with "TinyGS-test"!!!
+  const char* moduleNameString = "Uninitalised";
 
   double _atof(const char* buff, size_t length);
   int _atoi(const char* buff, size_t length);

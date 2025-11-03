@@ -32,6 +32,7 @@ public:
   static void getLog(uint32_t idx, char** entry_pp, size_t* len_p);
   static char getLogIdx();
   static void setLogLevel(LoggingLevels level);
+  static void log_packet(uint8_t *packet, size_t size);
 
 private:
   static void AddLog(LoggingLevels logLevel, const char* logData);
