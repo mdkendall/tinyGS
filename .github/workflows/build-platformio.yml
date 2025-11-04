@@ -10,9 +10,14 @@ jobs:
 
     runs-on: ubuntu-latest
 
+    strategy:
+      fail-fast: false
+      matrix:
+        env: [ESP32, ESP32-S3, ESP32-S3-USB, ESP32-C3, ESP32-LILYGO_SX1280]
+
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
       - name: Cache pip
         uses: actions/cache@v3
         with:
@@ -34,28 +39,26 @@ jobs:
           python -m pip install --upgrade pip
           pip install --upgrade platformio
       - name: Run PlatformIO
-        run: pio run -e ESP32
-      - name: Convert bootloader format from elf to bin
-        run: >
-          python ~/.platformio/packages/tool-esptoolpy/esptool.py --chip esp32 elf2image
-          --dont-append-digest
-          ~/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32/bin/bootloader_dio_40m.elf
+        run: pio run -e ${{ matrix.env }}
       - name: Create merged binary
-        run: >
-          python ~/.platformio/packages/tool-esptoolpy/esptool.py --chip esp32 merge_bin -o .pio/build/ESP32/firmware-full.bin
-          --flash_mode dio --flash_freq 40m --flash_size 4MB
-          0x1000 ~/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32/bin/bootloader_dio_40m.bin
-          0x8000 .pio/build/ESP32/partitions.bin
-          0xe000 ~/.platformio/packages/framework-arduinoespressif32/tools/partitions/boot_app0.bin
-          0x10000 .pio/build/ESP32/firmware.bin
+        run: |
+          CHIP=esp32
+          if [[ "${{ matrix.env }}" == *"S3"* ]]; then CHIP=esp32s3; fi
+          if [[ "${{ matrix.env }}" == *"C3"* ]]; then CHIP=esp32c3; fi
+          python ~/.platformio/packages/tool-esptoolpy/esptool.py --chip "$CHIP" merge_bin -o .pio/build/${{ matrix.env }}/firmware-full.bin \
+            --flash_mode dio --flash_freq 40m --flash_size 4MB \
+            0x1000 .pio/build/${{ matrix.env }}/bootloader.bin \
+            0x8000 .pio/build/${{ matrix.env }}/partitions.bin \
+            0xe000 ~/.platformio/packages/framework-arduinoespressif32/tools/partitions/boot_app0.bin \
+            0x10000 .pio/build/${{ matrix.env }}/firmware.bin
       - name: Rename binaries
         run: |
-          mv .pio/build/ESP32/firmware.bin .pio/build/ESP32/tinygs-$(git describe --tags --always)-ota.bin
-          mv .pio/build/ESP32/firmware-full.bin .pio/build/ESP32/tinygs-$(git describe --tags --always)-full.bin
+          mv .pio/build/${{ matrix.env }}/firmware.bin .pio/build/${{ matrix.env }}/tinygs-${{ matrix.env }}-$(git describe --tags --always)-ota.bin
+          mv .pio/build/${{ matrix.env }}/firmware-full.bin .pio/build/${{ matrix.env }}/tinygs-${{ matrix.env }}-$(git describe --tags --always)-full.bin
       - name: Archive build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: firmware
+          name: firmware-${{ matrix.env }}
           path: |
-            .pio/build/ESP32/tinygs-*-ota.bin
-            .pio/build/ESP32/tinygs-*-full.bin
+            .pio/build/${{ matrix.env }}/tinygs-${{ matrix.env }}-*-ota.bin
+            .pio/build/${{ matrix.env }}/tinygs-${{ matrix.env }}-*-full.bin
